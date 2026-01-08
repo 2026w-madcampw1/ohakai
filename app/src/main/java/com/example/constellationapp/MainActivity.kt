@@ -4,14 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
@@ -19,11 +16,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import com.example.constellationapp.screens.HoroscopeScreen
+import com.example.constellationapp.screens.ImageScreen
+import com.example.constellationapp.screens.ListScreen
 import com.example.constellationapp.ui.theme.ConstellationAppTheme
+
+// 1. 탭 메뉴 정의 (이게 꼭 있어야 에러가 안 납니다!)
+enum class AppDestinations(
+    val label: String,
+    val icon: ImageVector
+) {
+    List("리스트", Icons.Default.List),
+    Gallery("이미지", Icons.Default.Star),
+    Horoscope("운세", Icons.Default.DateRange)
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,64 +38,33 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ConstellationAppTheme {
-                ConstellationAppApp()
+                ConstellationApp()
             }
         }
     }
 }
 
-@PreviewScreenSizes
 @Composable
-fun ConstellationAppApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+fun ConstellationApp() {
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.List) }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
-            AppDestinations.entries.forEach {
+            AppDestinations.entries.forEach { destination ->
                 item(
-                    icon = {
-                        Icon(
-                            it.icon,
-                            contentDescription = it.label
-                        )
-                    },
-                    label = { Text(it.label) },
-                    selected = it == currentDestination,
-                    onClick = { currentDestination = it }
+                    icon = { Icon(destination.icon, contentDescription = destination.label) },
+                    label = { Text(destination.label) },
+                    selected = currentDestination == destination,
+                    onClick = { currentDestination = destination }
                 )
             }
         }
     ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Greeting(
-                name = "Android",
-                modifier = Modifier.padding(innerPadding)
-            )
+        // 선택된 메뉴에 따라 화면 교체
+        when (currentDestination) {
+            AppDestinations.List -> ListScreen()
+            AppDestinations.Gallery -> ImageScreen()
+            AppDestinations.Horoscope -> HoroscopeScreen()
         }
-    }
-}
-
-enum class AppDestinations(
-    val label: String,
-    val icon: ImageVector,
-) {
-    HOME("Home", Icons.Default.Home),
-    FAVORITES("Favorites", Icons.Default.Favorite),
-    PROFILE("Profile", Icons.Default.AccountBox),
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ConstellationAppTheme {
-        Greeting("Android")
     }
 }
