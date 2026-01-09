@@ -18,18 +18,16 @@ import com.example.constellationapp.ui.theme.*
 @Composable
 fun StartScreen(onStartClick: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // 1. 맨 위에 하얀색 상단 바 추가 (상태바 높이만큼)
+        // 맨 위 상태바 밝은 회색 배경으로
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsTopHeight(WindowInsets.statusBars)
                 .background(Color.LightGray)
         )
-
-        // 2. 기존 컨텐츠를 담은 메인 영역
         Box(
             modifier = Modifier
-                .weight(1f) // 나머지 공간을 모두 차지
+                .weight(1f) // 흰색바 나머지 공간을 모두 차지
                 .fillMaxWidth()
                 .background(
                     Brush.verticalGradient(

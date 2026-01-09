@@ -22,17 +22,12 @@ import com.example.constellationapp.R
 fun ImageScreen() {
     val imageList = listOf(
         "물병자리" to R.drawable.constellation,
-        "물고기자리" to R.drawable.constellation,
-        "양자리" to R.drawable.constellation,
-        "황소자리" to R.drawable.constellation,
-        "쌍둥이자리" to R.drawable.constellation,
-        "게자리" to R.drawable.constellation,
-        "사자자리" to R.drawable.constellation,
-        "처녀자리" to R.drawable.constellation,
-        "천칭자리" to R.drawable.constellation,
-        "전갈자리" to R.drawable.constellation,
-        "사수자리" to R.drawable.constellation,
-        "염소자리" to R.drawable.constellation
+        "물병자리" to R.drawable.lucky_item1,
+        "물병자리" to R.drawable.constellation,
+        "물병자리" to R.drawable.constellation,
+        "물병자리" to R.drawable.constellation,
+        "물병자리" to R.drawable.constellation,
+        "물병자리" to R.drawable.constellation,
     )
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
