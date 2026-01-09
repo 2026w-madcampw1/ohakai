@@ -1,5 +1,6 @@
 package com.example.constellationapp.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,7 +26,7 @@ import java.util.Calendar
 import kotlin.random.Random
 
 @Composable
-fun ListScreen() {
+fun ListScreen(onItemClick: (String) -> Unit) {
     val allConstellations = remember {
         val seed = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
         val random = Random(seed)
@@ -47,16 +48,18 @@ fun ListScreen() {
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             itemsIndexed(allConstellations) { index, data ->
-                RankingCard(rank = index + 1, data = data)
+                RankingCard(rank = index + 1, data = data, onClick = { onItemClick(data.name) })
             }
         }
     }
 }
 
 @Composable
-fun RankingCard(rank: Int, data: ConstellationData) {
+fun RankingCard(rank: Int, data: ConstellationData, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick) // Add clickable modifier
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
