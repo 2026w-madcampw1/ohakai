@@ -6,7 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -27,9 +27,9 @@ enum class AppDestinations(
     val label: String,
     val icon: ImageVector
 ) {
-    List("리스트", Icons.Default.List),
-    Gallery("이미지", Icons.Default.Star),
-    Horoscope("운세", Icons.Default.DateRange)
+    ListPage("리스트", Icons.Default.Menu),
+    GalleryPage("이미지", Icons.Default.Star),
+    HoroscopePage("운세", Icons.Default.DateRange)
 }
 
 class MainActivity : ComponentActivity() {
@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ConstellationApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.List) }
+    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.ListPage) }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -62,9 +62,9 @@ fun ConstellationApp() {
     ) {
         // 선택된 메뉴에 따라 화면 교체
         when (currentDestination) {
-            AppDestinations.List -> ListScreen()
-            AppDestinations.Gallery -> ImageScreen()
-            AppDestinations.Horoscope -> HoroscopeScreen()
+            AppDestinations.ListPage -> ListScreen()
+            AppDestinations.GalleryPage -> ImageScreen()
+            AppDestinations.HoroscopePage -> HoroscopeScreen()
         }
     }
 }
