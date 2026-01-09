@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +24,14 @@ fun StartScreen(onStartClick: () -> Unit){
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DeepBlueSky)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF001220),
+                        DeepBlueSky
+                    )
+                )
+            )
             .padding(24.dp)
     ) {
         // 그리드 UI
