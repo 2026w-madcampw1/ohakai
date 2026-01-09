@@ -37,18 +37,18 @@ fun ListScreen(onItemClick: (String) -> Unit) {
         
         // 별자리와 해당 이미지 리소스를 매핑 (순서대로 1~12)
         val rawData = listOf(
-            Triple("물병자리", "1/20-2/18", R.drawable.img_1),
-            Triple("물고기자리", "2/19-3/20", R.drawable.img_2),
-            Triple("양자리", "3/21-4/19", R.drawable.img_3),
-            Triple("황소자리", "4/20-5/20", R.drawable.img_4),
-            Triple("쌍둥이자리", "5/21-6/21", R.drawable.img_5),
-            Triple("게자리", "6/22-7/22", R.drawable.img_6),
-            Triple("사자자리", "7/23-8/22", R.drawable.img_7),
-            Triple("처녀자리", "8/23-9/23", R.drawable.img_8),
-            Triple("천칭자리", "9/24-10/22", R.drawable.img_9),
-            Triple("전갈자리", "10/23-11/22", R.drawable.img_10),
-            Triple("사수자리", "11/23-12/21", R.drawable.img_11),
-            Triple("염소자리", "12/22-1/19", R.drawable.img_0)
+            Triple("물병자리", "1/20-2/18", R.drawable.icon_aquarius),
+            Triple("물고기자리", "2/19-3/20", R.drawable.icon_pisces),
+            Triple("양자리", "3/21-4/19", R.drawable.icon_aries),
+            Triple("황소자리", "4/20-5/20", R.drawable.icon_taurus),
+            Triple("쌍둥이자리", "5/21-6/21", R.drawable.icon_gemini),
+            Triple("게자리", "6/22-7/22", R.drawable.icon_cancer),
+            Triple("사자자리", "7/23-8/22", R.drawable.icon_leo),
+            Triple("처녀자리", "8/23-9/23", R.drawable.icon_virgo),
+            Triple("천칭자리", "9/24-10/22", R.drawable.icon_libra),
+            Triple("전갈자리", "10/23-11/22", R.drawable.icon_scorpius),
+            Triple("사수자리", "11/23-12/21", R.drawable.icon_sagittarius),
+            Triple("염소자리", "12/22-1/19", R.drawable.icon_capricorn)
         )
 
         rawData.map { (name, date, imgRes) ->

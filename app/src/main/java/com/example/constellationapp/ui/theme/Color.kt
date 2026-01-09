@@ -13,3 +13,5 @@ val Pink40 = Color(0xFF7D5260)
 val DeepBlueSky = Color(0xFF050A18)
 
 val StarYellow = Color(0xFFFFD700)
+
+val LightGray = Color(0xFFD9D9D9)
