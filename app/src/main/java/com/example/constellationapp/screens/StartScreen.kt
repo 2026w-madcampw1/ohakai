@@ -19,24 +19,28 @@ import com.example.constellationapp.ui.theme.*
 
 @Composable
 fun StartScreen(onStartClick: () -> Unit){
+    // 화면 전체 감싸는 박스
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(DeepBlueSky)
             .padding(24.dp)
     ) {
+        // 그리드 UI
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // 추후 별자리 이미지 추가할 곳
             Text(
                 text = "별자리 이미지",
                 fontSize = 50.sp
             )
-
+            // ---------
+            // 빈공간 = 패딩으로대체 가능?
             Spacer(modifier = Modifier.height(40.dp))
-
+            // 텍스트 두줄로
             Text(
                 text = "오늘의 별자리 운세",
                 color = Color.White,
@@ -50,7 +54,7 @@ fun StartScreen(onStartClick: () -> Unit){
                 fontSize = 20.sp,
                 textAlign = TextAlign.Center
             )
-
+            // 빈공간
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
@@ -60,19 +64,21 @@ fun StartScreen(onStartClick: () -> Unit){
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
-        }
+        } // 그리드 UI 끝
+        // 버튼 배치
         Button(
-            onClick = onStartClick,
+            onClick = onStartClick, // onStartClick을 파라미터로 받음
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
                 .align(Alignment.BottomCenter),
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(12.dp), // 모서리가 둥근 사각형
             colors = ButtonDefaults.buttonColors(
-                containerColor = StarYellow,
+                containerColor = StarYellow, // AI가 추천해준건데, 카카오톡 버튼이랑 똑같이 생김 ;;
                 contentColor = Color.Black
             )
         ) {
+            // 버튼 내 텍스트
             Text(
                 text="시작하기",
                 fontSize = 18.sp,
