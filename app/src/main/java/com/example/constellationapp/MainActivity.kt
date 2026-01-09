@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                         0 -> StartScreen(onStartClick = { appStep = 1 })
                         1 -> BirthInputScreen(onNextClick = { appStep = 2 })
                         2 -> ConstellationApp()
-                    }
+                        }
                     }
                 }
             }
