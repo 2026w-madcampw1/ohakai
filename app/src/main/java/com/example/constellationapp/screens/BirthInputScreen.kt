@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,17 +22,20 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.abs
 
 @Composable
 fun BirthInputScreen(onNextClick:() -> Unit){
@@ -98,8 +102,7 @@ fun BirthInputScreen(onNextClick:() -> Unit){
     }
 
 }
-
-
+// 숫자를 위아래로 스크롤해서 선택하게 하는 UI
 @Composable
 fun NumberPicker(
     range: IntRange,
@@ -108,42 +111,66 @@ fun NumberPicker(
 ) {
     val listState = rememberLazyListState()
     val numbers = range.toList()
-
     val snapBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
-    // 스크롤이 멈췄을 때 중앙에 있는 값을 감지
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress) {
-            val centerIndex = listState.firstVisibleItemIndex
-            if (centerIndex in numbers.indices) {
-                onValueChange(numbers[centerIndex])
+
+    val itemHeight = 50.dp// 각 숫자의 높이
+    val pickerHeight = 160.dp// 전체 피커 UI 높이
+
+    // 중앙에 있는 아이템을 계산하는 로직
+    val centerIndex by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val visibleItems = layoutInfo.visibleItemsInfo
+            if (visibleItems.isEmpty()) 0
+            else {
+                // 뷰포트 사용해서 뷰포트 시작지점 + 끝지점 /2 로 중앙 지점 구함
+                val viewportCenter = (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
+                // 가장 가까운값을 구함 ( 원리 이해 필요 )
+                visibleItems.minByOrNull { abs((it.offset + it.size / 2) - viewportCenter) }?.index ?: 0
             }
         }
     }
 
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) { // 스크롤이 멈출때
+            // 인덱스 범위를 벗어나지 않도록 방어 코드 추가
+            val safeIndex = centerIndex.coerceIn(0, numbers.size - 1)
+            onValueChange(numbers[safeIndex])
+        }
+    }
+
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier
-            .width(50.dp)
-            .height(120.dp)) {
+        Box(
+            modifier = Modifier
+                .width(60.dp)
+                .height(pickerHeight)
+        ) {
             LazyColumn(
                 state = listState,
                 flingBehavior = snapBehavior,
-                contentPadding = PaddingValues(vertical = 35.dp), // 중앙 정렬 효과용 여백
+                // ⭐ 핵심: 첫 번째와 마지막 숫자가 정중앙(80dp 지점)에 올 수 있도록
+                // 상하단 패딩을 (전체높이/2 - 아이템절반/2) 정도로 넉넉히 줍니다.
+                contentPadding = PaddingValues(vertical = 50.dp),
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 items(numbers.size) { index ->
-                    val isSelected = listState.firstVisibleItemIndex == index
+                    val isSelected = centerIndex == index
+
                     Text(
                         text = numbers[index].toString().padStart(2, '0'),
-                        fontSize = if (isSelected) 26.sp else 20.sp,
+                        fontSize = if (isSelected) 28.sp else 18.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        modifier = Modifier.padding(vertical = 10.dp),
+                        // 아이템 간격을 일정하게 유지
+                        modifier = Modifier
+                            .height(itemHeight)
+                            .wrapContentHeight(Alignment.CenterVertically),
                         color = if (isSelected) MaterialTheme.colorScheme.primary else Color.LightGray
                     )
                 }
             }
         }
-        Text(text = label, modifier = Modifier.padding(start = 8.dp))
+        Text(text = label, modifier = Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
     }
 }
