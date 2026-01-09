@@ -4,23 +4,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.constellationapp.screens.BirthInputScreen
 import com.example.constellationapp.screens.HoroscopeScreen
 import com.example.constellationapp.screens.ImageScreen
 import com.example.constellationapp.screens.ListScreen
 import com.example.constellationapp.ui.theme.ConstellationAppTheme
+import com.example.constellationapp.screens.StartScreen
 
 // 1. 탭 메뉴 정의 (이게 꼭 있어야 에러가 안 납니다!)
 enum class AppDestinations(
@@ -38,7 +47,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ConstellationAppTheme {
-                ConstellationApp()
+                var appStep by rememberSaveable { mutableIntStateOf(0) }
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    AnimatedContent(targetState = appStep, label="screen_transition"){ targetStep ->
+                    when (targetStep) {
+                        0 -> StartScreen(onStartClick = { appStep = 1 })
+                        1 -> BirthInputScreen(onNextClick = { appStep = 2 })
+                        2 -> ConstellationApp()
+                    }
+                    }
+                }
             }
         }
     }
