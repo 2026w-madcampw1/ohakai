@@ -20,8 +20,16 @@ import com.example.constellationapp.ui.theme.*
 
 @Composable
 fun StartScreen(onStartClick: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // 1. 맨 위에 하얀색 상단 바 추가 (상태바 높이만큼)
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 1. 배경 이미지
+        Image(
+            painter = painterResource(id = R.drawable.startscreen_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop // 화면에 꽉 차게 조절
+        )
+
+        // 2. 상단 상태바 영역 투명 처리 (필요시)
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
@@ -29,20 +37,12 @@ fun StartScreen(onStartClick: () -> Unit) {
                 .background(Color.LightGray)
         )
 
-        // 2. 기존 컨텐츠를 담은 메인 영역
-        Box(
+        // 3. 컨텐츠 레이어
+        Column(
             modifier = Modifier
-                .weight(1f) // 나머지 공간을 모두 차지
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFF001220),
-                            DeepBlueSky
-                        )
-                    )
-                )
-                .padding(24.dp)
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 중앙 컨텐츠 (텍스트들)
             Column(

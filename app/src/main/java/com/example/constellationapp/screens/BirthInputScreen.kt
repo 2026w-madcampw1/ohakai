@@ -26,16 +26,14 @@ fun BirthInputScreen(onNextClick: () -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var selectedMonth by rememberSaveable { mutableIntStateOf(1) }
     var selectedDay by rememberSaveable { mutableIntStateOf(1) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(100.dp))
+        Spacer(modifier = Modifier.height(50.dp))
         Text(
             text = "운명의 별자리 찾기",
             style = MaterialTheme.typography.headlineMedium,
@@ -53,7 +51,8 @@ fun BirthInputScreen(onNextClick: () -> Unit) {
         Spacer(modifier = Modifier.height(40.dp))
 
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .fillMaxHeight(0.7f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 이름 입력
@@ -95,7 +94,7 @@ fun BirthInputScreen(onNextClick: () -> Unit) {
         }
 
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // 확인 버튼
         Button(
