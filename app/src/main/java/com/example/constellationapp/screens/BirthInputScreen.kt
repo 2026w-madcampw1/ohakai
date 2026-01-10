@@ -5,7 +5,9 @@ import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -29,7 +31,8 @@ fun BirthInputScreen(onNextClick: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(24.dp),
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(100.dp))
