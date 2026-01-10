@@ -1,4 +1,7 @@
 package com.example.constellationapp
 
-class ConstellationData {
-}
+data class ConstellationData (
+    val name: String,
+    val date: String,
+    val score: Int
+)

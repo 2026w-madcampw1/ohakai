@@ -1,7 +1,11 @@
 package com.example.constellationapp.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -16,15 +20,23 @@ import com.example.constellationapp.R
 
 @Composable
 fun ImageScreen() {
-    // 여기에 본인이 drawable 폴더에 넣은 이미지 이름을 적으세요
-    // 일단 테스트용으로 하나만 넣었습니다. 이미지를 더 넣으면 리스트에 추가하세요.
     val imageList = listOf(
-        "양자리" to R.drawable.star_aries, // 임시 이미지
-        "황소자리" to R.drawable.star_taurus
+        "물병자리" to R.drawable.constellation,
+        "물고기자리" to R.drawable.constellation,
+        "양자리" to R.drawable.constellation,
+        "황소자리" to R.drawable.constellation,
+        "쌍둥이자리" to R.drawable.constellation,
+        "게자리" to R.drawable.constellation,
+        "사자자리" to R.drawable.constellation,
+        "처녀자리" to R.drawable.constellation,
+        "천칭자리" to R.drawable.constellation,
+        "전갈자리" to R.drawable.constellation,
+        "사수자리" to R.drawable.constellation,
+        "염소자리" to R.drawable.constellation
     )
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(text = "별자리 갤러리", modifier = Modifier.padding(bottom = 16.dp))
+        Text(text = "행운의 아이템", modifier = Modifier.padding(bottom = 16.dp))
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(2), // 2열로 보여주기
@@ -36,7 +48,7 @@ fun ImageScreen() {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(
                             painter = painterResource(id = item.second),
-                            contentDescription = null,
+                            contentDescription = item.first,
                             modifier = Modifier.size(150.dp).padding(8.dp)
                         )
                         Text(text = item.first, modifier = Modifier.padding(8.dp))
