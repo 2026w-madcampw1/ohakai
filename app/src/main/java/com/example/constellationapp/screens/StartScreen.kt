@@ -1,5 +1,6 @@
 package com.example.constellationapp.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,48 +8,49 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.constellationapp.R
 import com.example.constellationapp.ui.theme.*
 
 @Composable
 fun StartScreen(onStartClick: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // 맨 위 상태바 밝은 회색 배경으로
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 1. 배경 이미지
+        Image(
+            painter = painterResource(id = R.drawable.startscreen_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop // 화면에 꽉 차게 조절
+        )
+
+        // 2. 상단 상태바 영역 투명 처리 (필요시)
         Spacer(
             modifier = Modifier
                 .fillMaxWidth()
                 .windowInsetsTopHeight(WindowInsets.statusBars)
                 .background(Color.LightGray)
         )
-        Box(
+
+        // 3. 컨텐츠 레이어
+        Column(
             modifier = Modifier
-                .weight(1f) // 흰색바 나머지 공간을 모두 차지
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFF001220),
-                            DeepBlueSky
-                        )
-                    )
-                )
-                .padding(24.dp)
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 중앙 컨텐츠 (텍스트들)
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "별자리 이미지",
-                    fontSize = 50.sp
-                )
+                // 기존 텍스트 대신 로고나 이미지가 있다면 여기에 배치 가능
                 Spacer(modifier = Modifier.height(40.dp))
                 Text(
                     text = "오늘의 별자리 운세",
@@ -66,7 +68,7 @@ fun StartScreen(onStartClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "생일로 당신의 별자리를 찾고\n오늘의 운세와 밤하늘의 기억을 기록해보세요.",
-                    color = Color.Gray,
+                    color = Color.LightGray,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
@@ -79,7 +81,7 @@ fun StartScreen(onStartClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .align(Alignment.BottomCenter),
+                    .padding(bottom = 16.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = StarYellow,
