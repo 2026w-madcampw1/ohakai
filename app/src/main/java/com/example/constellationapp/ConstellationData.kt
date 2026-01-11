@@ -104,7 +104,7 @@ object LuckItemProvider {
                 Offset(0.253f, 0.546f),
                 Offset(0.498f, 0.550f)
             ),
-            listOf(0 to 4, 1 to 4, 2 to 4, 3 to 4)
+            listOf(0 to 4, 1 to 4, 2 to 4, 3 to 4, 3 to 1)
         ),
         LuckyItemData(9, "해바라기", "", R.drawable.lucky_item9,
             listOf(
