@@ -38,7 +38,7 @@ object LuckItemProvider {
                 Offset(0.355f, 0.323f),
                 Offset(0.637f, 0.327f)
             )),
-        LuckyItemData(3, "무당벌레", "", R.drawable.lucky_item3,
+        LuckyItemData(3, "무당벌레", "좋아요", R.drawable.lucky_item3,
             listOf(
                 Offset(0.508f, 0.389f),
                 Offset(0.321f, 0.532f),
@@ -63,6 +63,14 @@ object LuckItemProvider {
                 Offset(0.603f, 0.230f),
                 Offset(0.754f, 0.312f)
             )),
+        LuckyItemData(6, "책", "", R.drawable.lucky_item7,
+            listOf(
+                Offset(0.276f, 0.514f),
+                Offset(0.765f, 0.344f),
+                Offset(0.812f, 0.460f),
+                Offset(0.780f, 0.577f),
+                Offset(0.773f, 0.705f)
+            )),
         LuckyItemData(7, "책", "", R.drawable.lucky_item7,
             listOf(
                 Offset(0.276f, 0.514f),
@@ -71,14 +79,14 @@ object LuckItemProvider {
                 Offset(0.780f, 0.577f),
                 Offset(0.773f, 0.705f)
             )),
-        LuckyItemData(8, "나침반", "", R.drawable.lucky_item8),
+        LuckyItemData(8, "나침반", "", R.drawable.lucky_item8,
             listOf(
                 Offset(0.496f, 0.323f),
                 Offset(0.506f, 0.799f),
                 Offset(0.762f, 0.548f),
                 Offset(0.253f, 0.546f),
                 Offset(0.498f, 0.550f)
-            ),
+            )),
         LuckyItemData(9, "해바라기", "", R.drawable.lucky_item9,
             listOf(
                 Offset(0.520f, 0.168f),
