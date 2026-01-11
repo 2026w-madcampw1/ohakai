@@ -6,9 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.constellationapp"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.constellationapp"
@@ -38,6 +36,12 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    
+    sourceSets {
+        getByName("main") {
+            res.srcDirs("src/main/res", "src/main/res-lucky")
+        }
     }
 }
 
