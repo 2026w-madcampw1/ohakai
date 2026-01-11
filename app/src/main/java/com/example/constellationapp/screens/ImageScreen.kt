@@ -35,7 +35,7 @@ fun ImageScreen() {
         "행운의 아이템 12" to R.drawable.lucky_item12,
     )
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize()) {
         Text(text = "행운의 아이템 갤러리", modifier = Modifier.padding(bottom = 16.dp))
 
         LazyVerticalGrid(

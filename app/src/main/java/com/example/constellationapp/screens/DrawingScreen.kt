@@ -1,193 +1,254 @@
 package com.example.constellationapp.screens
 
+import android.util.Log
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.constellationapp.LuckItemProvider
+import com.example.constellationapp.R
 import kotlin.math.sqrt
 
 @Composable
 fun DrawingScreen() {
     var itemIndex by remember { mutableStateOf(0) }
-    val currentItem = LuckItemProvider.items.getOrNull(itemIndex)
+    val haptic = LocalHapticFeedback.current
 
-    // 사용자가 연결한 별들의 인덱스 쌍 (시작 인덱스 to 끝 인덱스)
-    val connectedLines = remember { mutableStateListOf<Pair<Int, Int>>() }
-    // 현재 드래그 중인 선의 위치
-    var dragPoint by remember { mutableStateOf<Offset?>(null) }
-    var activeStarIndex by remember { mutableStateOf<Int?>(null) }
+    val primaryColor = MaterialTheme.colorScheme.primary 
 
-    // 아이템 변경 시 초기화
-    LaunchedEffect(itemIndex) {
-        connectedLines.clear()
-        dragPoint = null
-        activeStarIndex = null
-    }
+    // 하단 바와의 중복을 피하기 위해 Scaffold 제거
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF00050A))
+    ) {
+        // 배경 이미지
+        Image(
+            painter = painterResource(id = R.drawable.startscreen_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize().alpha(0.4f),
+            contentScale = ContentScale.Crop
+        )
 
-    Scaffold(
-        bottomBar = {
-            BottomAppBar {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Button(onClick = { if (itemIndex > 0) itemIndex-- }) { Text("이전") }
-                    Text(currentItem?.name ?: "없음", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                    Button(onClick = { if (itemIndex < LuckItemProvider.items.size - 1) itemIndex++ }) { Text("다음") }
+        Crossfade(
+            targetState = itemIndex,
+            animationSpec = tween(durationMillis = 600),
+            label = "ItemTransition"
+        ) { targetIndex ->
+            val currentItem = LuckItemProvider.items.getOrNull(targetIndex)
+            val connectedLines = remember(targetIndex) { mutableStateListOf<Pair<Int, Int>>() }
+            var dragPoint by remember(targetIndex) { mutableStateOf<Offset?>(null) }
+            var activeStarIndex by remember(targetIndex) { mutableStateOf<Int?>(null) }
+
+            val progress = remember(connectedLines.size, currentItem) {
+                val required = currentItem?.requiredLines ?: emptyList()
+                if (required.isEmpty()) 0f
+                else {
+                    val correctCount = required.count { line ->
+                        connectedLines.contains(line) || connectedLines.contains(line.second to line.first)
+                    }
+                    correctCount.toFloat() / required.size
                 }
             }
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(Color(0xFF000814))
-                .pointerInput(itemIndex) {
-                    detectDragGestures(
-                        onDragStart = { offset ->
-                            // 터치 시작점이 어느 별과 가까운지 확인
-                            currentItem?.stars?.let { stars ->
-                                val hitIndex = stars.indexOfFirst { star ->
-                                    val starOffset = Offset(star.x * size.width, star.y * size.height)
-                                    getDistance(offset, starOffset) < 60f // 터치 인식 반경 확대 (40f -> 60f)
-                                }
-                                if (hitIndex != -1) {
-                                    activeStarIndex = hitIndex
-                                    dragPoint = offset
-                                }
-                            }
-                        },
-                        onDrag = { change, _ ->
-                            dragPoint = change.position
-                        },
-                        onDragEnd = {
-                            // 드래그가 끝난 지점이 다른 별 위라면 연결
-                            if (activeStarIndex != null && dragPoint != null) {
+
+            val alphaBasis = remember(progress) {
+                if (progress <= 0f) 0f 
+                else (0.2f + (progress * 0.8f)).coerceAtMost(1f)
+            }
+
+            val animatedBackgroundAlpha by animateFloatAsState(
+                targetValue = alphaBasis,
+                animationSpec = tween(durationMillis = 300, delayMillis = 300),
+                label = "BackgroundAlphaAnimation"
+            )
+
+            val successExpandScale by animateFloatAsState(
+                targetValue = if (progress >= 1f) 1.5f else 0f,
+                animationSpec = tween(durationMillis = 1500),
+                label = "SuccessExpandAnimation"
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(targetIndex) {
+                        detectDragGestures(
+                            onDragStart = { offset ->
                                 currentItem?.stars?.let { stars ->
+                                    val contentHeight = size.width * 1.2f
+                                    val verticalOffset = (size.height - contentHeight) / 2
+
                                     val hitIndex = stars.indexOfFirst { star ->
-                                        val starOffset = Offset(star.x * size.width, star.y * size.height)
-                                        getDistance(dragPoint!!, starOffset) < 60f // 터치 인식 반경 확대 (40f -> 60f)
+                                        val starOffset = Offset(
+                                            star.x * size.width,
+                                            star.y * contentHeight + verticalOffset
+                                        )
+                                        getDistance(offset, starOffset) < 80f
                                     }
-                                    // 자기 자신과 연결하는 것 방지 및 이미 연결된 선 방지
-                                    if (hitIndex != -1 && hitIndex != activeStarIndex) {
-                                        val newLine = if (activeStarIndex!! < hitIndex) 
-                                            activeStarIndex!! to hitIndex 
-                                        else 
-                                            hitIndex to activeStarIndex!!
-                                        
-                                        if (!connectedLines.contains(newLine)) {
-                                            connectedLines.add(newLine)
+                                    if (hitIndex != -1) {
+                                        activeStarIndex = hitIndex
+                                        dragPoint = offset
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    }
+                                }
+                            },
+                            onDrag = { change, _ ->
+                                dragPoint = change.position
+                            },
+                            onDragEnd = {
+                                if (activeStarIndex != null && dragPoint != null) {
+                                    currentItem?.stars?.let { stars ->
+                                        val contentHeight = size.width * 1.2f
+                                        val verticalOffset = (size.height - contentHeight) / 2
+
+                                        val hitIndex = stars.indexOfFirst { star ->
+                                            val starOffset = Offset(
+                                                star.x * size.width,
+                                                star.y * contentHeight + verticalOffset
+                                            )
+                                            getDistance(dragPoint!!, starOffset) < 80f
+                                        }
+                                        if (hitIndex != -1 && hitIndex != activeStarIndex) {
+                                            val newLine = activeStarIndex!! to hitIndex
+                                            if (!connectedLines.contains(newLine) && !connectedLines.contains(hitIndex to activeStarIndex!!)) {
+                                                connectedLines.add(newLine)
+                                                Log.d("ConstellationLog", "Item[$targetIndex] 연결됨")
+                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            }
                                         }
                                     }
                                 }
+                                activeStarIndex = null
+                                dragPoint = null
                             }
-                            activeStarIndex = null
-                            dragPoint = null
-                        }
-                    )
-                }
-        ) {
-            // 1. 가이드 이미지 (배경)
-            currentItem?.let { item ->
-                Image(
-                    painter = painterResource(id = item.imageResId),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize().alpha(0.15f),
-                    contentScale = ContentScale.Fit
-                )
-            }
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val stars = currentItem?.stars ?: emptyList()
-                
-                // 2. 이미 연결된 선 그리기
-                connectedLines.forEach { (startIdx, endIdx) ->
-                    val start = Offset(stars[startIdx].x * size.width, stars[startIdx].y * size.height)
-                    val end = Offset(stars[endIdx].x * size.width, stars[endIdx].y * size.height)
-                    drawLine(
-                        color = Color.Cyan,
-                        start = start,
-                        end = end,
-                        strokeWidth = 4f,
-                        cap = StrokeCap.Round
-                    )
-                }
-
-                // 3. 현재 드래그 중인 선 그리기
-                if (activeStarIndex != null && dragPoint != null) {
-                    val start = Offset(stars[activeStarIndex!!].x * size.width, stars[activeStarIndex!!].y * size.height)
-                    drawLine(
-                        color = Color.White.copy(alpha = 0.5f),
-                        start = start,
-                        end = dragPoint!!,
-                        strokeWidth = 3f,
-                        cap = StrokeCap.Round
-                    )
-                }
-
-                // 4. 별 점 그리기
-                stars.forEachIndexed { index, ratio ->
-                    val center = Offset(ratio.x * size.width, ratio.y * size.height)
-                    val isConnected = connectedLines.any { it.first == index || it.second == index }
-                    
-                    drawCircle(
-                        color = if (isConnected) Color.Cyan else Color.LightGray,
-                        radius = if (isConnected) 18f else 12f, // 별 크기 확대 (12/8 -> 18/12)
-                        center = center
-                    )
-                    
-                    // 별 주위 글로우 효과 (선택)
-                    if (isConnected) {
+                        )
+                    }
+            ) {
+                if (successExpandScale > 0f) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val maxRadius = sqrt(size.width * size.width + size.height * size.height)
                         drawCircle(
-                            color = Color.Cyan.copy(alpha = 0.3f),
-                            radius = 30f, // 글로우 크기 확대 (20f -> 30f)
+                            color = Color.White.copy(alpha = 1.0f * (successExpandScale / 1.5f)),
+                            radius = maxRadius * successExpandScale,
                             center = center
                         )
                     }
                 }
+
+                currentItem?.let { item ->
+                    Image(
+                        painter = painterResource(id = item.imageResId),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .alpha(animatedBackgroundAlpha),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stars = currentItem?.stars ?: emptyList()
+                    val contentHeight = size.width * 1.2f
+                    val verticalOffset = (size.height - contentHeight) / 2
+
+                    connectedLines.forEach { (startIdx, endIdx) ->
+                        if (startIdx < stars.size && endIdx < stars.size) {
+                            val start = Offset(stars[startIdx].x * size.width, stars[startIdx].y * contentHeight + verticalOffset)
+                            val end = Offset(stars[endIdx].x * size.width, stars[endIdx].y * contentHeight + verticalOffset)
+                            
+                            drawLine(color = primaryColor.copy(alpha = 0.3f), start = start, end = end, strokeWidth = 15f, cap = StrokeCap.Round)
+                            drawLine(color = Color.White, start = start, end = end, strokeWidth = 6f, cap = StrokeCap.Round)
+                        }
+                    }
+
+                    if (activeStarIndex != null && dragPoint != null && activeStarIndex!! < stars.size) {
+                        val start = Offset(stars[activeStarIndex!!].x * size.width, stars[activeStarIndex!!].y * contentHeight + verticalOffset)
+                        drawLine(color = Color.White.copy(alpha = 0.4f), start = start, end = dragPoint!!, strokeWidth = 10f, cap = StrokeCap.Round)
+                    }
+
+                    stars.forEachIndexed { index, ratio ->
+                        val center = Offset(ratio.x * size.width, ratio.y * contentHeight + verticalOffset)
+                        val isConnected = connectedLines.any { it.first == index || it.second == index }
+                        
+                        if (isConnected) {
+                            drawCircle(brush = Brush.radialGradient(colors = listOf(Color.White, primaryColor.copy(alpha = 0.4f), Color.Transparent), center = center, radius = 45f), radius = 45f, center = center)
+                            drawCircle(color = Color.White, radius = 12f, center = center)
+                        } else {
+                            drawCircle(brush = Brush.radialGradient(colors = listOf(Color.White.copy(alpha = 0.5f), Color.Transparent), center = center, radius = 25f), radius = 25f, center = center)
+                            drawCircle(color = Color.LightGray, radius = 8f, center = center)
+                        }
+                    }
+                }
+            }
+        }
+
+        // [상단 버튼]
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 48.dp, start = 24.dp, end = 24.dp), // 상단 여백 조정
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { if (itemIndex > 0) itemIndex-- },
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(primaryColor.copy(alpha = 0.2f))
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "이전",
+                    tint = primaryColor
+                )
             }
 
-            // 안내 메시지
             Text(
-                text = "별과 별을 드래그해서 연결하세요",
-                color = Color.Gray,
-                modifier = Modifier.align(Alignment.TopCenter).padding(24.dp)
+                text = LuckItemProvider.items.getOrNull(itemIndex)?.name ?: "",
+                color = Color.White,
+                style = MaterialTheme.typography.titleLarge
             )
-            
-            // 완료 상태 표시 (모든 별이 한 번 이상 연결되었을 때)
-            val allStarsConnected = currentItem?.stars?.indices?.all { idx ->
-                connectedLines.any { it.first == idx || it.second == idx }
-            } == true
-            
-            if (allStarsConnected) {
-                Text(
-                    text = "✨ 별자리 완성! ✨",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.Yellow,
-                    modifier = Modifier.align(Alignment.Center)
+
+            IconButton(
+                onClick = { if (itemIndex < LuckItemProvider.items.size - 1) itemIndex++ },
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(primaryColor.copy(alpha = 0.2f))
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "다음",
+                    tint = primaryColor
                 )
             }
         }
     }
 }
 
-// 두 지점 사이의 거리 계산 함수
-private fun getDistance(p1: Offset, p2: Offset): Float {
-    return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y))
-}
+private fun getDistance(p1: Offset, p2: Offset): Float = sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y))
