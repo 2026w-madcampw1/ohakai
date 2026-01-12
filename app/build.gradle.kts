@@ -8,9 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.constellationapp"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.constellationapp"
@@ -41,6 +39,12 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    sourceSets {
+        getByName("main") {
+            res.srcDirs("src/main/res", "src/main/res-lucky")
+        }
+    }
 }
 
 dependencies {
@@ -54,6 +58,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.datastore:datastore-preferences-core:1.2.0")
+    implementation("androidx.datastore:datastore-preferences:1.2.0")
+    //implementation("io.coil-kt:coil-compose:2.5.0")
 
     // JSON 처리를 위한 라이브러리 추가
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")

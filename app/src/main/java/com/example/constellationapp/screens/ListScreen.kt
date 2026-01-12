@@ -47,6 +47,9 @@ fun ListScreen(
         viewModel.fetchHoroscopes()
     }
 
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(text = "오늘의 별자리 순위", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(16.dp))
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
