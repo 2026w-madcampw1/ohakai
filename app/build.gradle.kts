@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    // JSON 데이터를 Kotlin 객체로 변환하기 위한 Serialization 플러그인 추가
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
 }
 
 android {
@@ -59,6 +61,15 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences-core:1.2.0")
     implementation("androidx.datastore:datastore-preferences:1.2.0")
     //implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // JSON 처리를 위한 라이브러리 추가
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // 네트워크 통신을 위한 Retrofit 라이브러리 추가
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // Retrofit이 Kotlinx Serialization을 사용하도록 해주는 변환기 라이브러리
+    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
