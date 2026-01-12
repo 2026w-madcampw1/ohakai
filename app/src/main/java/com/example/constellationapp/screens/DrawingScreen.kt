@@ -29,24 +29,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.constellationapp.DataStoreManager
 import com.example.constellationapp.LuckItemProvider
 import com.example.constellationapp.R
 import kotlin.math.sqrt
 
 @Composable
-fun DrawingScreen() {
+fun DrawingScreen(dataStoreManager: DataStoreManager) {
     var itemIndex by remember { mutableStateOf(0) }
     val haptic = LocalHapticFeedback.current
 
     val primaryColor = MaterialTheme.colorScheme.primary 
 
-    // 하단 바와의 중복을 피하기 위해 Scaffold 제거
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF00050A))
     ) {
-        // 배경 이미지
         Image(
             painter = painterResource(id = R.drawable.startscreen_background),
             contentDescription = null,
@@ -72,6 +71,13 @@ fun DrawingScreen() {
                         connectedLines.contains(line) || connectedLines.contains(line.second to line.first)
                     }
                     correctCount.toFloat() / required.size
+                }
+            }
+
+            // 별자리 완성 시 숨김 목록에서 해당 인덱스 제거
+            LaunchedEffect(progress) {
+                if (progress >= 1f) {
+                    dataStoreManager.removeHiddenItem(targetIndex)
                 }
             }
 
@@ -136,7 +142,6 @@ fun DrawingScreen() {
                                             val newLine = activeStarIndex!! to hitIndex
                                             if (!connectedLines.contains(newLine) && !connectedLines.contains(hitIndex to activeStarIndex!!)) {
                                                 connectedLines.add(newLine)
-                                                Log.d("ConstellationLog", "Item[$targetIndex] 연결됨")
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                             }
                                         }
@@ -206,11 +211,10 @@ fun DrawingScreen() {
             }
         }
 
-        // [상단 버튼]
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp), // 상단 여백 조정
+                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -231,7 +235,7 @@ fun DrawingScreen() {
             Text(
                 text = "당신의 행운아이템을 그려보세요",
                 color = Color.White,
-                style = MaterialTheme.typography.titleMedium // 크기를 약간 줄여 한 줄에 잘 보이게 조정
+                style = MaterialTheme.typography.titleMedium
             )
 
             IconButton(

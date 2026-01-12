@@ -113,7 +113,6 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
             }
         }
     ) { innerPadding ->
-        // isOnboardingCompleted가 null이면 로딩 중이므로 아무것도 그리지 않거나 로딩 인디케이터 표시
         if (isOnboardingCompleted != null) {
             val startRoute = if (isOnboardingCompleted == true) AppDestinations.Horoscope.route else "start"
             
@@ -139,8 +138,16 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         navController.navigate("constellationDetail/$it")
                     })
                 }
-                composable(AppDestinations.LuckyItem.route) { ImageScreen() }
-                composable(AppDestinations.Drawing.route) { DrawingScreen() }
+                composable(AppDestinations.LuckyItem.route) { 
+                    ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = {
+                        navController.navigate(AppDestinations.Drawing.route) {
+                            popUpTo(AppDestinations.Horoscope.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }) 
+                }
+                composable(AppDestinations.Drawing.route) { DrawingScreen(dataStoreManager) }
 
                 composable("constellationDetail/{name}") { backStackEntry ->
                     val name = backStackEntry.arguments?.getString("name") ?: ""
