@@ -199,7 +199,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                         )
                     } else {
                         Image(
-                            painter = painterResource(id = item.imageResId),
+                            painter = painterResource(id = item.realImageResId),
                             contentDescription = item.name,
                             modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop

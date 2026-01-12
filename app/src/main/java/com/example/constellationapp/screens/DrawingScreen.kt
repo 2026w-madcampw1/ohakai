@@ -165,7 +165,7 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
 
                 currentItem?.let { item ->
                     Image(
-                        painter = painterResource(id = item.imageResId),
+                        painter = painterResource(id = item.sketchImageResId),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()

@@ -174,7 +174,7 @@ fun NumberPicker(
             LazyColumn(
                 state = listState,
                 flingBehavior = snapBehavior,
-                contentPadding = PaddingValues(vertical = 50.dp),
+                contentPadding = PaddingValues(vertical = 40.dp),
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
