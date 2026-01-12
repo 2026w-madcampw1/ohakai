@@ -229,9 +229,9 @@ fun DrawingScreen() {
             }
 
             Text(
-                text = LuckItemProvider.items.getOrNull(itemIndex)?.name ?: "",
+                text = "당신의 행운아이템을 그려보세요",
                 color = Color.White,
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleMedium // 크기를 약간 줄여 한 줄에 잘 보이게 조정
             )
 
             IconButton(
