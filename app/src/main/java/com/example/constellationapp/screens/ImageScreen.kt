@@ -71,12 +71,12 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shadowElevation = 8.dp
-            )
+//        bottomBar = {
+//            Surface(
+//                modifier = Modifier.fillMaxWidth(),
+//                color = Color.White,
+//                shadowElevation = 8.dp
+//            )
 //            {
 //                Button(
 //                    onClick = { /* 상세 운세 확인 로직 */ },
@@ -90,7 +90,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
 //                    Text("상세 운세 확인하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
 //                }
 //            }
-        },
+//        }
         containerColor = Color.White
     ) { paddingValues ->
         LazyVerticalGrid(
