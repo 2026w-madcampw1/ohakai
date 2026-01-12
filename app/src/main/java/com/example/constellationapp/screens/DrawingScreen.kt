@@ -1,5 +1,6 @@
 package com.example.constellationapp.screens
 
+import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -27,17 +28,19 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.constellationapp.DataStoreManager
 import com.example.constellationapp.LuckItemProvider
 import com.example.constellationapp.R
 import kotlin.math.sqrt
 
 @Composable
-fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
-    var itemIndex by remember { mutableStateOf(itemIndex) }
+fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
+    var currentItemIndex by remember(initialItemIndex) { mutableIntStateOf(initialItemIndex) }
     val haptic = LocalHapticFeedback.current
-
     val primaryColor = MaterialTheme.colorScheme.primary 
 
     Box(
@@ -53,7 +56,7 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
         )
 
         Crossfade(
-            targetState = itemIndex,
+            targetState = currentItemIndex,
             animationSpec = tween(durationMillis = 600),
             label = "ItemTransition"
         ) { targetIndex ->
@@ -62,6 +65,24 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
             var dragPoint by remember(targetIndex) { mutableStateOf<Offset?>(null) }
             var activeStarIndex by remember(targetIndex) { mutableStateOf<Int?>(null) }
 
+            var animationTriggered by remember(targetIndex) { mutableStateOf(false) }
+            LaunchedEffect(targetIndex) {
+                animationTriggered = true
+            }
+
+            // 1. 별 애니메이션
+            val starAnimAlpha by animateFloatAsState(
+                targetValue = if (animationTriggered) 1f else 0f,
+                animationSpec = tween(durationMillis = 700, delayMillis = 500),
+                label = "StarAlpha"
+            )
+            val starAnimSlideY by animateFloatAsState(
+                targetValue = if (animationTriggered) 0f else 30f,
+                animationSpec = tween(durationMillis = 700, delayMillis = 500),
+                label = "StarSlide"
+            )
+
+            // 2. 가이드 텍스트 애니메이션 (완성 시 사라짐)
             val progress = remember(connectedLines.size, currentItem) {
                 val required = currentItem?.requiredLines ?: emptyList()
                 if (required.isEmpty()) 0f
@@ -73,7 +94,19 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                 }
             }
 
-            // 별자리 완성 시 숨김 목록에서 해당 인덱스 제거
+            val guideTextAlpha by animateFloatAsState(
+                targetValue = if (animationTriggered && progress < 1f) 1f else 0f,
+                animationSpec = tween(durationMillis = 600, delayMillis = if (progress < 1f) 1500 else 0),
+                label = "GuideTextAlpha"
+            )
+
+            // 3. 완성 시 나타나는 텍스트 애니메이션 (이름 & 설명)
+            val completionAlpha by animateFloatAsState(
+                targetValue = if (progress >= 1f) 1f else 0f,
+                animationSpec = tween(durationMillis = 1000, delayMillis = 500),
+                label = "CompletionAlpha"
+            )
+
             LaunchedEffect(progress) {
                 if (progress >= 1f) {
                     dataStoreManager.removeHiddenItem(targetIndex)
@@ -87,7 +120,7 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
 
             val animatedBackgroundAlpha by animateFloatAsState(
                 targetValue = alphaBasis,
-                animationSpec = tween(durationMillis = 300, delayMillis = 300),
+                animationSpec = tween(durationMillis = 300, delayMillis = 100),
                 label = "BackgroundAlphaAnimation"
             )
 
@@ -103,15 +136,12 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                     .pointerInput(targetIndex) {
                         detectDragGestures(
                             onDragStart = { offset ->
+                                if (progress >= 1f) return@detectDragGestures // 완성 후 터치 방지
                                 currentItem?.stars?.let { stars ->
                                     val contentHeight = size.width * 1.2f
                                     val verticalOffset = (size.height - contentHeight) / 2
-
                                     val hitIndex = stars.indexOfFirst { star ->
-                                        val starOffset = Offset(
-                                            star.x * size.width,
-                                            star.y * contentHeight + verticalOffset
-                                        )
+                                        val starOffset = Offset(star.x * size.width, star.y * contentHeight + verticalOffset)
                                         getDistance(offset, starOffset) < 80f
                                     }
                                     if (hitIndex != -1) {
@@ -121,20 +151,14 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                                     }
                                 }
                             },
-                            onDrag = { change, _ ->
-                                dragPoint = change.position
-                            },
+                            onDrag = { change, _ -> if (progress < 1f) dragPoint = change.position },
                             onDragEnd = {
                                 if (activeStarIndex != null && dragPoint != null) {
                                     currentItem?.stars?.let { stars ->
                                         val contentHeight = size.width * 1.2f
                                         val verticalOffset = (size.height - contentHeight) / 2
-
                                         val hitIndex = stars.indexOfFirst { star ->
-                                            val starOffset = Offset(
-                                                star.x * size.width,
-                                                star.y * contentHeight + verticalOffset
-                                            )
+                                            val starOffset = Offset(star.x * size.width, star.y * contentHeight + verticalOffset)
                                             getDistance(dragPoint!!, starOffset) < 80f
                                         }
                                         if (hitIndex != -1 && hitIndex != activeStarIndex) {
@@ -152,6 +176,7 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                         )
                     }
             ) {
+                // 완성 효과 (화이트아웃)
                 if (successExpandScale > 0f) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val maxRadius = sqrt(size.width * size.width + size.height * size.height)
@@ -161,6 +186,20 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                             center = center
                         )
                     }
+                }
+
+                // 1. [완성 시] 아이템 이름 (상단)
+                if (progress >= 1f) {
+                    Text(
+                        text = currentItem?.name ?: "",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 90.dp)
+                            .alpha(completionAlpha)
+                    )
                 }
 
                 currentItem?.let { item ->
@@ -183,9 +222,8 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                         if (startIdx < stars.size && endIdx < stars.size) {
                             val start = Offset(stars[startIdx].x * size.width, stars[startIdx].y * contentHeight + verticalOffset)
                             val end = Offset(stars[endIdx].x * size.width, stars[endIdx].y * contentHeight + verticalOffset)
-                            
-                            drawLine(color = primaryColor.copy(alpha = 0.3f), start = start, end = end, strokeWidth = 15f, cap = StrokeCap.Round)
-                            drawLine(color = Color.White, start = start, end = end, strokeWidth = 6f, cap = StrokeCap.Round)
+                            drawLine(color = primaryColor.copy(alpha = 0.3f * starAnimAlpha), start = start, end = end, strokeWidth = 15f, cap = StrokeCap.Round)
+                            drawLine(color = Color.White.copy(alpha = starAnimAlpha), start = start, end = end, strokeWidth = 6f, cap = StrokeCap.Round)
                         }
                     }
 
@@ -195,62 +233,76 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
                     }
 
                     stars.forEachIndexed { index, ratio ->
-                        val center = Offset(ratio.x * size.width, ratio.y * contentHeight + verticalOffset)
+                        val center = Offset(ratio.x * size.width, ratio.y * contentHeight + verticalOffset + starAnimSlideY)
                         val isConnected = connectedLines.any { it.first == index || it.second == index }
-                        
                         if (isConnected) {
-                            drawCircle(brush = Brush.radialGradient(colors = listOf(Color.White, primaryColor.copy(alpha = 0.4f), Color.Transparent), center = center, radius = 45f), radius = 45f, center = center)
-                            drawCircle(color = Color.White, radius = 12f, center = center)
+                            drawCircle(brush = Brush.radialGradient(colors = listOf(Color.White.copy(alpha = starAnimAlpha), primaryColor.copy(alpha = 0.4f * starAnimAlpha), Color.Transparent), center = center, radius = 45f), radius = 45f, center = center)
+                            drawCircle(color = Color.White.copy(alpha = starAnimAlpha), radius = 12f, center = center)
                         } else {
-                            drawCircle(brush = Brush.radialGradient(colors = listOf(Color.White.copy(alpha = 0.5f), Color.Transparent), center = center, radius = 25f), radius = 25f, center = center)
-                            drawCircle(color = Color.LightGray, radius = 8f, center = center)
+                            drawCircle(brush = Brush.radialGradient(colors = listOf(Color.White.copy(alpha = 0.5f * starAnimAlpha), Color.Transparent), center = center, radius = 25f), radius = 25f, center = center)
+                            drawCircle(color = Color.LightGray.copy(alpha = starAnimAlpha), radius = 8f, center = center)
                         }
                     }
                 }
-            }
-        }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = { if (itemIndex > 0) itemIndex-- },
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(primaryColor.copy(alpha = 0.2f))
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = "이전",
-                    tint = primaryColor
-                )
+                // 2. [완성 시] 아이템 설명 (하단)
+                if (progress >= 1f) {
+                    Text(
+                        text = currentItem?.description ?: "",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Black.copy(alpha = 0.9f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 80.dp, start = 40.dp, end = 40.dp)
+                            .alpha(completionAlpha)
+                    )
+                }
             }
 
-            Text(
-                text = "당신의 행운아이템을 그려보세요",
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            IconButton(
-                onClick = { if (itemIndex < LuckItemProvider.items.size - 1) itemIndex++ },
+            // 초기 가이드 텍스트 (완성 시 사라짐)
+            Row(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(primaryColor.copy(alpha = 0.2f))
+                    .fillMaxWidth()
+                    .padding(top = 48.dp, start = 24.dp, end = 24.dp)
+                    .alpha(guideTextAlpha),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "다음",
-                    tint = primaryColor
+                Text(
+                    text = "당신의 행운아이템을 그려보세요",
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center,
+                    fontSize = 18.sp
                 )
             }
         }
+
+//        // 아이템 변경 버튼
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            IconButton(
+//                onClick = { if (currentItemIndex > 0) currentItemIndex-- },
+//                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
+//            ) {
+//                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "이전", tint = primaryColor)
+//            }
+//
+//            Spacer(modifier = Modifier.weight(1f))
+//
+//            IconButton(
+//                onClick = { if (currentItemIndex < LuckItemProvider.items.size - 1) currentItemIndex++ },
+//                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
+//            ) {
+//                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "다음", tint = primaryColor)
+//            }
+//        }
     }
 }
 
