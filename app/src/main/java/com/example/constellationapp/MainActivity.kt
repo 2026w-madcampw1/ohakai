@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,13 +40,16 @@ enum class AppDestinations(
 }
 
 class MainActivity : ComponentActivity() {
+    private lateinit var dataStoreManager: DataStoreManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dataStoreManager = DataStoreManager(this)
         enableEdgeToEdge()
         setContent {
             ConstellationAppTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    ConstellationApp()
+                    ConstellationApp(dataStoreManager)
                 }
             }
         }
@@ -53,13 +57,14 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ConstellationApp() {
+fun ConstellationApp(dataStoreManager: DataStoreManager) {
     val navController = rememberNavController()
-    // 현재 네비게이션 상태 추적
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // 하단 네비게이션 바를 표시할 경로들 정의
+    // 데이터 저장소에서 온보딩 완료 여부 읽기
+    val isOnboardingCompleted by dataStoreManager.isOnboardingCompleted.collectAsState(initial = null)
+
     val bottomBarRoutes = AppDestinations.entries.map { it.route }
     val showBottomBar = currentRoute in bottomBarRoutes
 
@@ -78,7 +83,6 @@ fun ConstellationApp() {
                             onClick = {
                                 if (!isSelected) {
                                     navController.navigate(destination.route) {
-                                        // 스택에 쌓이지 않도록 이전 목적지 팝업
                                         popUpTo(AppDestinations.Horoscope.route) { saveState = true }
                                         launchSingleTop = true
                                         restoreState = true
@@ -109,39 +113,39 @@ fun ConstellationApp() {
             }
         }
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = "start",
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            // 초기 시작 화면
-            composable("start") {
-                StartScreen(onStartClick = { navController.navigate("birthInput") })
-            }
+        // isOnboardingCompleted가 null이면 로딩 중이므로 아무것도 그리지 않거나 로딩 인디케이터 표시
+        if (isOnboardingCompleted != null) {
+            val startRoute = if (isOnboardingCompleted == true) AppDestinations.Horoscope.route else "start"
+            
+            NavHost(
+                navController = navController,
+                startDestination = startRoute,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("start") {
+                    StartScreen(onStartClick = { navController.navigate("birthInput") })
+                }
 
-            // 생년월일 입력 화면
-            composable("birthInput") {
-                BirthInputScreen(onNextClick = {
-                    // 입력 완료 후 메인 화면으로 이동 (시작/입력 화면은 스택에서 제거)
-                    navController.navigate(AppDestinations.Horoscope.route) {
-                        popUpTo("start") { inclusive = true }
-                    }
-                })
-            }
+                composable("birthInput") {
+                    BirthInputScreen(dataStoreManager = dataStoreManager, onNextClick = {
+                        navController.navigate(AppDestinations.Horoscope.route) {
+                            popUpTo("start") { inclusive = true }
+                        }
+                    })
+                }
 
-            // 메인 탭 화면들
-            composable(AppDestinations.Horoscope.route) {
-                ListScreen(onItemClick = {
-                    navController.navigate("constellationDetail/$it")
-                })
-            }
-            composable(AppDestinations.LuckyItem.route) { ImageScreen() }
-            composable(AppDestinations.Drawing.route) { DrawingScreen() }
+                composable(AppDestinations.Horoscope.route) {
+                    ListScreen(onItemClick = {
+                        navController.navigate("constellationDetail/$it")
+                    })
+                }
+                composable(AppDestinations.LuckyItem.route) { ImageScreen() }
+                composable(AppDestinations.Drawing.route) { DrawingScreen() }
 
-            // 상세 화면
-            composable("constellationDetail/{name}") { backStackEntry ->
-                val name = backStackEntry.arguments?.getString("name") ?: ""
-                ConstellationDetailScreen(name = name)
+                composable("constellationDetail/{name}") { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    ConstellationDetailScreen(name = name)
+                }
             }
         }
     }

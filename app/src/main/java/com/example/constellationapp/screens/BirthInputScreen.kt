@@ -19,13 +19,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.constellationapp.DataStoreManager
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
-fun BirthInputScreen(onNextClick: () -> Unit) {
+fun BirthInputScreen(dataStoreManager: DataStoreManager, onNextClick: () -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var selectedMonth by rememberSaveable { mutableIntStateOf(1) }
     var selectedDay by rememberSaveable { mutableIntStateOf(1) }
+    val scope = rememberCoroutineScope()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,14 +103,16 @@ fun BirthInputScreen(onNextClick: () -> Unit) {
         // 확인 버튼
         Button(
             onClick = {
-                // 선택된 날짜 정보 활용 가능
-                println("Selected: $selectedMonth / $selectedDay")
-                onNextClick()
+                // 입력 정보 저장 후 다음 화면으로 이동
+                scope.launch {
+                    dataStoreManager.saveUserInfo(name, selectedMonth, selectedDay)
+                    onNextClick()
+                }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            //enabled = name.isNotEmpty(),
+            enabled = name.isNotBlank(), // 이름 입력 필수
             shape = RoundedCornerShape(16.dp)
         ) {
             Text("나의 별자리 확인하기", fontSize = 18.sp, fontWeight = FontWeight.Bold)
