@@ -2,8 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // JSON 데이터를 Kotlin 객체로 변환하기 위한 Serialization 플러그인 추가
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.23"
+    // 최상단 build.gradle.kts에 등록된 serialization 플러그인을 이 모듈에서 사용하도록 적용합니다.
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -35,6 +35,8 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
+        // Serialization 관련 Opt-In 경고를 프로젝트 전체에서 무시하도록 설정합니다.
+        freeCompilerArgs += "-opt-in=kotlinx.serialization.InternalSerializationApi"
     }
     buildFeatures {
         compose = true
@@ -69,6 +71,9 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     // Retrofit이 Kotlinx Serialization을 사용하도록 해주는 변환기 라이브러리
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+
+    // Jsoup은 더 이상 필요 없으므로 주석 처리합니다.
+    // implementation("org.jsoup:jsoup:1.14.3")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

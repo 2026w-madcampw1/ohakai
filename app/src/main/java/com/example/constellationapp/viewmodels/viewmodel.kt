@@ -61,8 +61,8 @@ class HoroscopeViewModel : ViewModel() {
                 _horoscopes.value = uiData
 
             } catch (e: Exception) {
-                // 네트워크 오류 또는 데이터 변환 오류 발생 시
-                _horoscopes.value = listOf(ConstellationData(name = "데이터를 가져오는 데 실패했습니다.", date = e.message ?: "알 수 없는 오류", score = 0))
+                // 네트워크 오류 또는 데이터 변환 오류 발생 시. 모든 필드를 채워서 오류 신호를 만듭니다.
+                _horoscopes.value = listOf(ConstellationData(name = "데이터를 가져오는 데 실패했습니다.", date = e.message ?: "알 수 없는 오류", rank = 0, content = "", imageResId = 0))
             } finally {
                 _isLoading.value = false
             }
@@ -77,7 +77,9 @@ class HoroscopeViewModel : ViewModel() {
         return ConstellationData(
             name = name,
             date = constellationInfo[name] ?: "",
-            score = 13 - this.rank.toInt() // 순위를 점수로 변환 (1위=12점)
+            rank = this.rank.toInt(),
+            content = this.content,
+            imageResId = 0 // 현재 API에서는 이미지 정보가 없으므로 기본값을 사용합니다.
         )
     }
 }

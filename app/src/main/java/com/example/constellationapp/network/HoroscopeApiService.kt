@@ -8,7 +8,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.http.GET
 
-// 모든 네트워크 요청의 기준이 되는 기본 URL (원래대로 복구)
+// 모든 네트워크 요청의 기준이 되는 기본 URL
 private const val BASE_URL = "https://www.asahi.co.jp/data/ohaasa2020/"
 
 // Json 파싱 시 알 수 없는 키가 있어도 무시하도록 설정

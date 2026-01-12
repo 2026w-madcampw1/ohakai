@@ -76,7 +76,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White,
                 shadowElevation = 8.dp
-            )
+            ) {}
 //            {
 //                Button(
 //                    onClick = { /* 상세 운세 확인 로직 */ },

@@ -30,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.constellationapp.screens.*
 import com.example.constellationapp.ui.theme.ConstellationAppTheme
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 enum class AppDestinations(
     val route: String,
@@ -138,15 +140,17 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                     })
                 }
 
+                // 운세 목록 화면 (상세 내용 전달 기능 추가)
                 composable(AppDestinations.Horoscope.route) {
-                    ListScreen(onItemClick = {
-                        navController.navigate("constellationDetail/$it")
+                    ListScreen(onItemClick = { name, content ->
+                        val encodedContent = URLEncoder.encode(content, StandardCharsets.UTF_8.toString())
+                        navController.navigate("constellationDetail/$name/$encodedContent")
                     })
                 }
                 
+                // 행운의 아이템 화면
                 composable(AppDestinations.LuckyItem.route) { 
                     ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = { index ->
-                        // 인덱스를 포함하여 그리기 화면으로 이동
                         navController.navigate("${AppDestinations.Drawing.route}/$index") {
                             popUpTo(AppDestinations.Horoscope.route) { saveState = true }
                             launchSingleTop = true
@@ -169,9 +173,11 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                     DrawingScreen(dataStoreManager, 0) 
                 }
 
-                composable("constellationDetail/{name}") { backStackEntry ->
+                // 운세 상세 화면 (상세 내용 수신 기능 추가)
+                composable("constellationDetail/{name}/{content}") { backStackEntry ->
                     val name = backStackEntry.arguments?.getString("name") ?: ""
-                    ConstellationDetailScreen(name = name)
+                    val content = backStackEntry.arguments?.getString("content") ?: ""
+                    ConstellationDetailScreen(name = name, content = content)
                 }
             }
         }

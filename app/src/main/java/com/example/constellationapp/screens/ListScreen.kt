@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -35,7 +35,8 @@ import com.example.constellationapp.viewmodels.HoroscopeViewModel
  */
 @Composable
 fun ListScreen(
-    onItemClick: (String) -> Unit,
+    // 클릭 시 (이름, 내용) 두 개의 값을 전달하도록 콜백을 수정합니다.
+    onItemClick: (String, String) -> Unit,
     viewModel: HoroscopeViewModel = viewModel()
 ) {
     // ViewModel로부터 운세 목록과 로딩 상태를 구독하여 실시간으로 업데이트 받습니다.
@@ -47,41 +48,43 @@ fun ListScreen(
         viewModel.fetchHoroscopes()
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text(text = "오늘의 별자리 순위", fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        // 1. 로딩 중이고 데이터가 없을 때
-        if (isLoading && constellations.isEmpty()) {
-            CircularProgressIndicator()
-        // 2. 스크래핑 실패 또는 오류가 발생했을 때 (데이터가 1개이고, score가 0이면 오류로 간주)
-        } else if (constellations.size == 1 && constellations.first().score == 0) {
-            val errorData = constellations.first()
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = errorData.name, // "데이터를 가져오는 데 실패했습니다."
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = errorData.date, // 실제 오류 내용
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
-        // 3. 성공적으로 데이터를 가져왔을 때
-        } else {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                Text(text = "오늘의 별자리 순위", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
 
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            // 1. 로딩 중이고 데이터가 없을 때
+            if (isLoading && constellations.isEmpty()) {
+                CircularProgressIndicator()
+            // 2. 스크래핑 실패 또는 오류가 발생했을 때 (데이터가 1개이고, rank가 0이면 오류로 간주)
+            } else if (constellations.size == 1 && constellations.first().rank == 0) {
+                val errorData = constellations.first()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = errorData.name, // "데이터를 가져오는 데 실패했습니다."
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorData.date, // 실제 오류 내용
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            // 3. 성공적으로 데이터를 가져왔을 때
+            } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    itemsIndexed(constellations) { index, data ->
-                        RankingCard(rank = index + 1, data = data, onClick = { onItemClick(data.name) })
+                    items(constellations) { data ->
+                        // 클릭 시 이름과 함께 운세 내용(data.content)도 전달합니다.
+                        RankingCard(data = data, onClick = { onItemClick(data.name, data.content) })
                     }
                 }
             }
@@ -93,7 +96,7 @@ fun ListScreen(
  * 개별 순위 항목을 보여주는 카드 형태의 UI Composable
  */
 @Composable
-fun RankingCard(rank: Int, data: ConstellationData, onClick: () -> Unit) {
+fun RankingCard(data: ConstellationData, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,7 +106,7 @@ fun RankingCard(rank: Int, data: ConstellationData, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "${rank}위")
+            Text(text = "${data.rank}위")
             Spacer(modifier = Modifier.width(16.dp))
             Text(text = data.name, modifier = Modifier.weight(1f))
         }
