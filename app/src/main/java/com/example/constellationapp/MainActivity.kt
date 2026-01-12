@@ -22,10 +22,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.constellationapp.screens.*
 import com.example.constellationapp.ui.theme.ConstellationAppTheme
 
@@ -62,11 +64,11 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // 데이터 저장소에서 온보딩 완료 여부 읽기
     val isOnboardingCompleted by dataStoreManager.isOnboardingCompleted.collectAsState(initial = null)
 
     val bottomBarRoutes = AppDestinations.entries.map { it.route }
-    val showBottomBar = currentRoute in bottomBarRoutes
+    // 파라미터가 포함된 경로("drawing/{itemIndex}")도 하단 바 노출 대상에 포함
+    val showBottomBar = currentRoute in bottomBarRoutes || currentRoute?.startsWith("drawing/") == true
 
     Scaffold(
         bottomBar = {
@@ -77,7 +79,10 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                     tonalElevation = 0.dp
                 ) {
                     AppDestinations.entries.forEach { destination ->
-                        val isSelected = currentRoute == destination.route
+                        // drawing/{index} 경로에서도 drawing 아이콘이 선택된 상태로 보이게 함
+                        val isSelected = currentRoute == destination.route || 
+                                        (destination == AppDestinations.Drawing && currentRoute?.startsWith("drawing/") == true)
+                        
                         NavigationBarItem(
                             selected = isSelected,
                             onClick = {
@@ -138,16 +143,31 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         navController.navigate("constellationDetail/$it")
                     })
                 }
+                
                 composable(AppDestinations.LuckyItem.route) { 
-                    ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = {
-                        navController.navigate(AppDestinations.Drawing.route) {
+                    ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = { index ->
+                        // 인덱스를 포함하여 그리기 화면으로 이동
+                        navController.navigate("${AppDestinations.Drawing.route}/$index") {
                             popUpTo(AppDestinations.Horoscope.route) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
                     }) 
                 }
-                composable(AppDestinations.Drawing.route) { DrawingScreen(dataStoreManager) }
+
+                // 인덱스 파라미터를 받는 그리기 화면
+                composable(
+                    route = "${AppDestinations.Drawing.route}/{itemIndex}",
+                    arguments = listOf(navArgument("itemIndex") { type = NavType.IntType })
+                ) { backStackEntry ->
+                    val index = backStackEntry.arguments?.getInt("itemIndex") ?: 0
+                    DrawingScreen(dataStoreManager, index)
+                }
+
+                // 기본 그리기 화면 (탭 클릭 시)
+                composable(AppDestinations.Drawing.route) { 
+                    DrawingScreen(dataStoreManager, 0) 
+                }
 
                 composable("constellationDetail/{name}") { backStackEntry ->
                     val name = backStackEntry.arguments?.getString("name") ?: ""

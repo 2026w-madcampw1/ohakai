@@ -32,10 +32,10 @@ import com.example.constellationapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: () -> Unit) {
+fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -> Unit) {
     val items = LuckItemProvider.items
     
-    // 데이터스토어에서 실시간으로 숨겨진 인덱스 목록을 가져옴
+    // 데이터스토어에서 실시간으로 숨겨진 인덱스 목록 및 사용자 정보 가져옴
     val hiddenIndices by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
     val userStats by dataStoreManager.userInfo.collectAsState(initial = null)
     val displayDate by dataStoreManager.lastUpdateDate.collectAsState(initial = "오늘")
@@ -76,19 +76,20 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: () -> U
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White,
                 shadowElevation = 8.dp
-            ) {
-                Button(
-                    onClick = { /* 상세 운세 확인 로직 */ },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A8CFF))
-                ) {
-                    Text("상세 운세 확인하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-            }
+            )
+//            {
+//                Button(
+//                    onClick = { /* 상세 운세 확인 로직 */ },
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(16.dp)
+//                        .height(56.dp),
+//                    shape = RoundedCornerShape(12.dp),
+//                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A8CFF))
+//                ) {
+//                    Text("상세 운세 확인하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+//                }
+//            }
         },
         containerColor = Color.White
     ) { paddingValues ->
@@ -178,7 +179,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: () -> U
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
                         .background(if (isHidden) Color(0xFFE0E5F0) else Color(0xFFF8F9FB))
-                        .then(if (isHidden) Modifier.clickable { onNavigateToDrawing() } else Modifier)
+                        .then(if (isHidden) Modifier.clickable { onNavigateToDrawing(index) } else Modifier)
                         .padding(12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {

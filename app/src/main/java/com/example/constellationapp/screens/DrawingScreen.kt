@@ -1,6 +1,5 @@
 package com.example.constellationapp.screens
 
-import android.util.Log
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -35,8 +34,8 @@ import com.example.constellationapp.R
 import kotlin.math.sqrt
 
 @Composable
-fun DrawingScreen(dataStoreManager: DataStoreManager) {
-    var itemIndex by remember { mutableStateOf(0) }
+fun DrawingScreen(dataStoreManager: DataStoreManager, itemIndex: Int) {
+    var itemIndex by remember { mutableStateOf(itemIndex) }
     val haptic = LocalHapticFeedback.current
 
     val primaryColor = MaterialTheme.colorScheme.primary 
