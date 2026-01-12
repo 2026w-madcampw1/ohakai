@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.example.constellationapp.DataStoreManager
 import com.example.constellationapp.LuckItemProvider
 import com.example.constellationapp.R
+import kotlinx.coroutines.delay
 import kotlin.math.sqrt
 
 @Composable
@@ -64,10 +66,19 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
             val connectedLines = remember(targetIndex) { mutableStateListOf<Pair<Int, Int>>() }
             var dragPoint by remember(targetIndex) { mutableStateOf<Offset?>(null) }
             var activeStarIndex by remember(targetIndex) { mutableStateOf<Int?>(null) }
+            
+            var failedLine by remember(targetIndex) { mutableStateOf<Pair<Int, Int>?>(null) }
 
             var animationTriggered by remember(targetIndex) { mutableStateOf(false) }
             LaunchedEffect(targetIndex) {
                 animationTriggered = true
+            }
+
+            LaunchedEffect(failedLine) {
+                if (failedLine != null) {
+                    delay(120)
+                    failedLine = null
+                }
             }
 
             // 1. 별 애니메이션
@@ -82,7 +93,7 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                 label = "StarSlide"
             )
 
-            // 2. 가이드 텍스트 애니메이션 (완성 시 사라짐)
+            // 2. 가이드 텍스트 애니메이션
             val progress = remember(connectedLines.size, currentItem) {
                 val required = currentItem?.requiredLines ?: emptyList()
                 if (required.isEmpty()) 0f
@@ -100,16 +111,27 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                 label = "GuideTextAlpha"
             )
 
-            // 3. 완성 시 나타나는 텍스트 애니메이션 (이름 & 설명)
+            // 3. 완성 시 나타나는 이름 & 설명 애니메이션
             val completionAlpha by animateFloatAsState(
                 targetValue = if (progress >= 1f) 1f else 0f,
                 animationSpec = tween(durationMillis = 1000, delayMillis = 500),
                 label = "CompletionAlpha"
             )
 
+            // [추가] 다음 버튼 상태 및 애니메이션
+            var showNextButton by remember(targetIndex) { mutableStateOf(false) }
+            val nextButtonAlpha by animateFloatAsState(
+                targetValue = if (showNextButton) 1f else 0f,
+                animationSpec = tween(durationMillis = 600),
+                label = "NextButtonAlpha"
+            )
+
             LaunchedEffect(progress) {
                 if (progress >= 1f) {
                     dataStoreManager.removeHiddenItem(targetIndex)
+                    // [추가] 완성 2.5초 뒤 다음 버튼 노출
+                    delay(2000)
+                    showNextButton = true
                 }
             }
 
@@ -136,7 +158,7 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                     .pointerInput(targetIndex) {
                         detectDragGestures(
                             onDragStart = { offset ->
-                                if (progress >= 1f) return@detectDragGestures // 완성 후 터치 방지
+                                if (progress >= 1f) return@detectDragGestures
                                 currentItem?.stars?.let { stars ->
                                     val contentHeight = size.width * 1.2f
                                     val verticalOffset = (size.height - contentHeight) / 2
@@ -163,9 +185,18 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                                         }
                                         if (hitIndex != -1 && hitIndex != activeStarIndex) {
                                             val newLine = activeStarIndex!! to hitIndex
-                                            if (!connectedLines.contains(newLine) && !connectedLines.contains(hitIndex to activeStarIndex!!)) {
-                                                connectedLines.add(newLine)
-                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            val isRequired = currentItem?.requiredLines?.any { 
+                                                (it.first == newLine.first && it.second == newLine.second) ||
+                                                (it.first == newLine.second && it.second == newLine.first)
+                                            } == true
+
+                                            if (isRequired) {
+                                                if (!connectedLines.contains(newLine) && !connectedLines.contains(hitIndex to activeStarIndex!!)) {
+                                                    connectedLines.add(newLine)
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                }
+                                            } else {
+                                                failedLine = newLine
                                             }
                                         }
                                     }
@@ -176,7 +207,6 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                         )
                     }
             ) {
-                // 완성 효과 (화이트아웃)
                 if (successExpandScale > 0f) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val maxRadius = sqrt(size.width * size.width + size.height * size.height)
@@ -188,7 +218,6 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                     }
                 }
 
-                // 1. [완성 시] 아이템 이름 (상단)
                 if (progress >= 1f) {
                     Text(
                         text = currentItem?.name ?: "",
@@ -227,6 +256,14 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                         }
                     }
 
+                    failedLine?.let { (startIdx, endIdx) ->
+                        if (startIdx < stars.size && endIdx < stars.size) {
+                            val start = Offset(stars[startIdx].x * size.width, stars[startIdx].y * contentHeight + verticalOffset)
+                            val end = Offset(stars[endIdx].x * size.width, stars[endIdx].y * contentHeight + verticalOffset)
+                            drawLine(color = Color.Red.copy(alpha = 0.3f), start = start, end = end, strokeWidth = 8f, cap = StrokeCap.Round)
+                        }
+                    }
+
                     if (activeStarIndex != null && dragPoint != null && activeStarIndex!! < stars.size) {
                         val start = Offset(stars[activeStarIndex!!].x * size.width, stars[activeStarIndex!!].y * contentHeight + verticalOffset)
                         drawLine(color = Color.White.copy(alpha = 0.4f), start = start, end = dragPoint!!, strokeWidth = 10f, cap = StrokeCap.Round)
@@ -245,7 +282,6 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                     }
                 }
 
-                // 2. [완성 시] 아이템 설명 (하단)
                 if (progress >= 1f) {
                     Text(
                         text = currentItem?.description ?: "",
@@ -254,13 +290,31 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 80.dp, start = 40.dp, end = 40.dp)
+                            .padding(bottom = 105.dp, start = 40.dp, end = 40.dp)
                             .alpha(completionAlpha)
                     )
                 }
+
+                // [추가] 다음 버튼 UI
+                if (showNextButton) {
+                    Button(
+                        onClick = {
+                            if (currentItemIndex < LuckItemProvider.items.size - 1) {
+                                currentItemIndex++
+                            }
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 40.dp)
+                            .alpha(nextButtonAlpha),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                    ) {
+                        Text("다음", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
             }
 
-            // 초기 가이드 텍스트 (완성 시 사라짐)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -279,7 +333,6 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
             }
         }
 
-//        // 아이템 변경 버튼
 //        Row(
 //            modifier = Modifier
 //                .fillMaxWidth()
