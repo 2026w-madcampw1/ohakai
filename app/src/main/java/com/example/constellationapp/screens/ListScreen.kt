@@ -2,6 +2,7 @@ package com.example.constellationapp.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,53 +14,87 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.constellationapp.ConstellationData
-import java.util.Calendar
-import kotlin.random.Random
+import com.example.constellationapp.viewmodels.HoroscopeViewModel
 
+/**
+ * ViewModel과 연결하여 실제 운세 순위 정보를 보여주는 화면 Composable
+ */
 @Composable
-fun ListScreen(onItemClick: (String) -> Unit) {
-    val allConstellations = remember {
-        val seed = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-        val random = Random(seed)
-        listOf(
-            "물병자리" to "1/20-2/18", "물고기자리" to "2/19-3/20",
-            "양자리" to "3/21-4/19", "황소자리" to "4/20-5/20",
-            "쌍둥이자리" to "5/21-6/21", "게자리" to "6/22-7/22",
-            "사자자리" to "7/23-8/22", "처녀자리" to "8/23-9/23",
-            "천칭자리" to "9/24-10/22", "전갈자리" to "10/23-11/22",
-            "사수자리" to "11/23-12/21", "염소자리" to "12/22-1/19"
-        ).map { (name, date) ->
-            ConstellationData(name, date, random.nextInt(60, 101))
-        }.sortedByDescending { it.score }
+fun ListScreen(
+    onItemClick: (String) -> Unit,
+    viewModel: HoroscopeViewModel = viewModel()
+) {
+    // ViewModel로부터 운세 목록과 로딩 상태를 구독하여 실시간으로 업데이트 받습니다.
+    val constellations by viewModel.horoscopes.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    // 화면이 처음 그려질 때(Launched) 운세 정보를 가져오도록 ViewModel에 요청합니다.
+    LaunchedEffect(Unit) {
+        viewModel.fetchHoroscopes()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(text = "오늘의 별자리 순위", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        // 1. 로딩 중이고 데이터가 없을 때
+        if (isLoading && constellations.isEmpty()) {
+            CircularProgressIndicator()
+        // 2. 스크래핑 실패 또는 오류가 발생했을 때 (데이터가 1개이고, score가 0이면 오류로 간주)
+        } else if (constellations.size == 1 && constellations.first().score == 0) {
+            val errorData = constellations.first()
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = errorData.name, // "데이터를 가져오는 데 실패했습니다."
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorData.date, // 실제 오류 내용
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        // 3. 성공적으로 데이터를 가져왔을 때
+        } else {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                Text(text = "오늘의 별자리 순위", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            itemsIndexed(allConstellations) { index, data ->
-                RankingCard(rank = index + 1, data = data, onClick = { onItemClick(data.name) })
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    itemsIndexed(constellations) { index, data ->
+                        RankingCard(rank = index + 1, data = data, onClick = { onItemClick(data.name) })
+                    }
+                }
             }
         }
     }
 }
 
+/**
+ * 개별 순위 항목을 보여주는 카드 형태의 UI Composable
+ */
 @Composable
 fun RankingCard(rank: Int, data: ConstellationData, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick) // Add clickable modifier
+            .clickable(onClick = onClick) // 카드를 클릭했을 때의 동작을 지정합니다.
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
