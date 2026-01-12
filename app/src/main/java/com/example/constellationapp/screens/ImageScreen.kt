@@ -52,7 +52,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                 modifier = Modifier.height(45.dp),
                 title = { 
                     Text(
-                        text = "오늘의 행운", 
+                        text = "오늘의 행운아이템", 
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.offset(y = (6).dp),
                         fontSize = 20.sp
