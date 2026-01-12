@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -51,16 +52,16 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                 windowInsets = WindowInsets(0, 0, 0, 0),
                 modifier = Modifier.height(45.dp),
                 title = { 
-                    Text(
-                        text = "오늘의 행운", 
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.offset(y = (6).dp),
-                        fontSize = 20.sp
-                    )
+//                    Text(
+//                        text = "오늘의 행운아이템",
+//                        style = MaterialTheme.typography.titleMedium,
+//                        modifier = Modifier.offset(y = (6).dp),
+//                        fontSize = 20.sp
+//                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { /* 뒤로가기 로직 */ }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로", tint = Color(0xFF6A8CFF))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로", tint = Color(0xFF6A8CFF))
                     }
                 },
                 actions = {
@@ -71,12 +72,12 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
             )
         },
-        bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.White,
-                shadowElevation = 8.dp
-            ) {}
+//        bottomBar = {
+//            Surface(
+//                modifier = Modifier.fillMaxWidth(),
+//                color = Color.White,
+//                shadowElevation = 8.dp
+//            )
 //            {
 //                Button(
 //                    onClick = { /* 상세 운세 확인 로직 */ },
@@ -90,7 +91,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
 //                    Text("상세 운세 확인하기", fontSize = 16.sp, fontWeight = FontWeight.Bold)
 //                }
 //            }
-        },
+//        }
         containerColor = Color.White
     ) { paddingValues ->
         LazyVerticalGrid(
@@ -106,7 +107,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(top = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(contentAlignment = Alignment.BottomEnd) {
@@ -145,7 +146,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                     Text(text = displayDate, fontSize = 14.sp, color = Color(0xFF6A8CFF), fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "오늘 당신의 에너지가 가장 빛나는 순간입니다.\n아래의 아이템들이 행운을 더해줄 거예요.",
+                        text = "오늘은 출근길에 좋은일이 있을거에요(임시)\n아래의 아이템들이 당신의 하루를 더욱 빛내줄거에요",
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         color = Color.Gray,
@@ -160,7 +161,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "오늘의 행운의 아이템 10선", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(text = "행운의 아이템 10선", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black)
                     Surface(color = Color(0xFFF0F3FF), shape = RoundedCornerShape(12.dp)) {
                         Text(
                             text = "매일 업데이트",
@@ -199,7 +200,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                         )
                     } else {
                         Image(
-                            painter = painterResource(id = item.imageResId),
+                            painter = painterResource(id = item.realImageResId),
                             contentDescription = item.name,
                             modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop
