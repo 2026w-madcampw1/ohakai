@@ -37,6 +37,8 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: () -> U
     
     // 데이터스토어에서 실시간으로 숨겨진 인덱스 목록을 가져옴
     val hiddenIndices by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
+    val userStats by dataStoreManager.userInfo.collectAsState(initial = null)
+    val displayDate by dataStoreManager.lastUpdateDate.collectAsState(initial = "오늘")
 
     // 화면 진입 시 매일 아침 6시 기준 갱신 로직 실행
     LaunchedEffect(Unit) {
@@ -47,13 +49,14 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: () -> U
         topBar = {
             CenterAlignedTopAppBar(
                 windowInsets = WindowInsets(0, 0, 0, 0),
-                modifier = Modifier.height(56.dp),
+                modifier = Modifier.height(45.dp),
                 title = { 
                     Text(
                         text = "오늘의 행운", 
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.offset(y = (-8).dp)
-                    ) 
+                        modifier = Modifier.offset(y = (6).dp),
+                        fontSize = 20.sp
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = { /* 뒤로가기 로직 */ }) {
@@ -137,8 +140,8 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: () -> U
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Text(text = "양자리", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(text = "2024년 3월 24일", fontSize = 14.sp, color = Color(0xFF6A8CFF), fontWeight = FontWeight.Medium)
+                    Text(text = userStats?.zodiac ?: "알수없음", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(text = displayDate, fontSize = 14.sp, color = Color(0xFF6A8CFF), fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = "오늘 당신의 에너지가 가장 빛나는 순간입니다.\n아래의 아이템들이 행운을 더해줄 거예요.",
