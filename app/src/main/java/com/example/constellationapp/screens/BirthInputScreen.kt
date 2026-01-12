@@ -113,6 +113,7 @@ fun BirthInputScreen(dataStoreManager: DataStoreManager, onNextClick: () -> Unit
                 .fillMaxWidth()
                 .height(56.dp),
             enabled = name.isNotBlank(), // 이름 입력 필수
+            //enabled = name.isNotEmpty(),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text("나의 별자리 확인하기", fontSize = 18.sp, fontWeight = FontWeight.Bold)
