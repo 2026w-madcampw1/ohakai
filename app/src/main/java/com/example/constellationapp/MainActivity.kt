@@ -1,5 +1,6 @@
 package com.example.constellationapp
 
+import android.util.Log
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("KEYCHECK", "len=${BuildConfig.OPENAI_API_KEY.length}")
         dataStoreManager = DataStoreManager(this)
         enableEdgeToEdge()
         setContent {

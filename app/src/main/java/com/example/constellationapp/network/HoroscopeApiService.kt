@@ -3,7 +3,7 @@ package com.example.constellationapp.network
 import com.example.constellationapp.OhaAsaResponse
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.http.GET
@@ -33,7 +33,7 @@ private val okHttpClient = OkHttpClient.Builder()
  */
 private val retrofit = Retrofit.Builder()
     // 받아온 데이터의 Content-Type 헤더와 상관없이 JSON으로 파싱하도록 설정
-    .addConverterFactory(json.asConverterFactory(MediaType.parse("text/plain")!!))
+    .addConverterFactory(json.asConverterFactory("text/plain".toMediaType()))
     // 2. 위에서 만든 위장용 클라이언트를 Retrofit에 장착
     .client(okHttpClient)
     // API의 기본 URL을 설정

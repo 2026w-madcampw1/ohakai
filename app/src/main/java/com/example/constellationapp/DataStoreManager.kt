@@ -7,11 +7,13 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
-// 사용자 정보를 묶어서 전달하기 위한 데이터 클래스
 data class UserStats(
     val name: String,
     val month: Int,
@@ -29,11 +31,45 @@ class DataStoreManager(private val context: Context) {
         val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
         val HIDDEN_ITEM_INDICES = stringPreferencesKey("hidden_item_indices")
         val LAST_UPDATE_DATE = stringPreferencesKey("last_update_date")
+
+        // 운세 캐싱을 위한 키
+        private val HOROSCOPE_CACHE_DATE = stringPreferencesKey("horoscope_cache_date")
+        private val HOROSCOPE_CACHE_DATA = stringSetPreferencesKey("horoscope_cache_data")
     }
 
-    /**
-     * 월과 일을 기준으로 별자리를 계산합니다.
-     */
+    // --- 신규 추가: 운세 캐싱 관련 함수 ---
+
+    suspend fun saveHoroscopes(horoscopes: List<ConstellationData>) {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val cacheData = horoscopes.map { "${it.name}|${it.date}|${it.rank}|${it.content}" }.toSet()
+        context.dataStore.edit {
+            it[HOROSCOPE_CACHE_DATE] = today
+            it[HOROSCOPE_CACHE_DATA] = cacheData
+        }
+    }
+
+    suspend fun getTodaysHoroscopes(): List<ConstellationData>? {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val prefs = context.dataStore.data.first()
+
+        if (prefs[HOROSCOPE_CACHE_DATE] == today) {
+            val cacheData = prefs[HOROSCOPE_CACHE_DATA]
+            if (!cacheData.isNullOrEmpty()) {
+                return cacheData.mapNotNull { 
+                    val parts = it.split("|")
+                    if (parts.size == 4) {
+                        ConstellationData(parts[0], parts[1], parts[2].toIntOrNull() ?: 0, parts[3])
+                    } else {
+                        null
+                    }
+                }.sortedBy { it.rank }
+            }
+        }
+        return null
+    }
+
+    // --- 기존 함수 복원 ---
+
     private fun getZodiacSign(month: Int, day: Int): String {
         return when (month) {
             1 -> if (day >= 20) "물병자리" else "염소자리"
@@ -52,7 +88,6 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // 이름/생일 저장 시 별자리도 함께 계산하여 저장
     suspend fun saveUserInfo(name: String, month: Int, day: Int) {
         val zodiac = getZodiacSign(month, day)
         context.dataStore.edit { prefs ->
@@ -64,7 +99,6 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // 별자리별 달성도 저장
     suspend fun saveProgress(itemId: Int, progress: Float) {
         val key = floatPreferencesKey("progress_$itemId")
         context.dataStore.edit { prefs ->
@@ -72,7 +106,6 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // 사용자 정보 스트림 (UserStats 객체로 반환)
     val userInfo: Flow<UserStats> = context.dataStore.data.map { prefs ->
         UserStats(
             name = prefs[USER_NAME] ?: "",
@@ -82,21 +115,17 @@ class DataStoreManager(private val context: Context) {
         )
     }
 
-    // 온보딩 완료 여부
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[IS_ONBOARDING_COMPLETED] ?: false
     }
 
-    // 특정 별자리 달성도 가져오기
     fun getProgress(itemId: Int): Flow<Float> = context.dataStore.data.map { prefs ->
         prefs[floatPreferencesKey("progress_$itemId")] ?: 0f
     }
 
-    // 마지막 갱신 날짜 스트림 (리포매팅 포함)
     val lastUpdateDate: Flow<String> = context.dataStore.data.map { prefs ->
         val raw = prefs[LAST_UPDATE_DATE] ?: ""
-        if (raw.length >= 6) { // yyyyM d 또는 yyyyMMdd 형태 대응
-            // 안전하게 Calendar를 이용해 오늘 날짜를 기본 포맷으로 생성
+        if (raw.length >= 6) {
             val now = Calendar.getInstance()
             "${now.get(Calendar.YEAR)}년 ${now.get(Calendar.MONTH) + 1}월 ${now.get(Calendar.DAY_OF_MONTH)}일"
         } else {
@@ -104,16 +133,12 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // 숨겨진 인덱스 스트림
     val hiddenItemIndices: Flow<Set<Int>> = context.dataStore.data.map { prefs ->
         val raw = prefs[HIDDEN_ITEM_INDICES] ?: ""
         if (raw.isEmpty()) emptySet()
         else raw.split(",").mapNotNull { it.toIntOrNull() }.toSet()
     }
 
-    /**
-     * 그리기에 성공한 아이템을 숨김 목록에서 제거함
-     */
     suspend fun removeHiddenItem(index: Int) {
         context.dataStore.edit { prefs ->
             val raw = prefs[HIDDEN_ITEM_INDICES] ?: ""
@@ -126,9 +151,6 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    /**
-     * 매일 아침 6시 기준으로 인덱스를 갱신해야 하는지 확인하고 필요시 갱신함
-     */
     suspend fun updateHiddenIndicesIfNeeded(totalItemCount: Int) {
         val now = Calendar.getInstance()
         val currentHour = now.get(Calendar.HOUR_OF_DAY)
