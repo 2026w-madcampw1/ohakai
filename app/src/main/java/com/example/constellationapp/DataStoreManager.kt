@@ -13,6 +13,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.Random
+import com.example.constellationapp.data.ZodiacConstants
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
@@ -41,11 +42,7 @@ class DataStoreManager(private val context: Context) {
         private val HOROSCOPE_CACHE_DATE = stringPreferencesKey("horoscope_cache_date")
         private val HOROSCOPE_CACHE_DATA = stringSetPreferencesKey("horoscope_cache_data")
 
-        val zodiacNameToIndex = mapOf(
-            "양자리" to 1, "황소자리" to 2, "쌍둥이자리" to 3, "게자리" to 4,
-            "사자자리" to 5, "처녀자리" to 6, "천칭자리" to 7, "전갈자리" to 8,
-            "궁수자리" to 9, "염소자리" to 10, "물병자리" to 11, "물고기자리" to 12
-        )
+        val zodiacNameToIndex = ZodiacConstants.zodiacNameToIndex
     }
 
     // --- 신규 추가: 운세 캐싱 관련 함수 ---
@@ -78,11 +75,7 @@ class DataStoreManager(private val context: Context) {
         }
         return null
 
-        val zodiacNameToIndex = mapOf(
-            "양자리" to 1, "황소자리" to 2, "쌍둥이자리" to 3, "게자리" to 4,
-            "사자자리" to 5, "처녀자리" to 6, "천칭자리" to 7, "전갈자리" to 8,
-            "궁수자리" to 9, "염소자리" to 10, "물병자리" to 11, "물고기자리" to 12
-        )
+        val zodiacNameToIndex = ZodiacConstants.zodiacNameToIndex
     }
 
     private fun calculateLuckyIndices(zodiacIndex: Int, daySeed: Long, totalCount: Int): List<Int> {
@@ -96,21 +89,7 @@ class DataStoreManager(private val context: Context) {
     }
 
     private fun getZodiacSign(month: Int, day: Int): String {
-        return when (month) {
-            1 -> if (day >= 20) "물병자리" else "염소자리"
-            2 -> if (day >= 19) "물고기자리" else "물병자리"
-            3 -> if (day >= 21) "양자리" else "물고기자리"
-            4 -> if (day >= 20) "황소자리" else "양자리"
-            5 -> if (day >= 21) "쌍둥이자리" else "황소자리"
-            6 -> if (day >= 22) "게자리" else "쌍둥이자리"
-            7 -> if (day >= 23) "사자자리" else "게자리"
-            8 -> if (day >= 23) "처녀자리" else "사자자리"
-            9 -> if (day >= 23) "천칭자리" else "처녀자리"
-            10 -> if (day >= 23) "전갈자리" else "천칭자리"
-            11 -> if (day >= 23) "궁수자리" else "전갈자리"
-            12 -> if (day >= 22) "염소자리" else "궁수자리"
-            else -> ""
-        }
+        return ZodiacConstants.getZodiacSign(month, day)
     }
 
     suspend fun saveUserInfo(name: String, month: Int, day: Int) {
@@ -135,11 +114,18 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
+    suspend fun getLuckyIndicesForZodiac(zodiacName: String, totalCount: Int): List<Int> {
+        val zodiacIndex = zodiacNameToIndex[zodiacName] ?: 1
+        val prefs = context.dataStore.data.first()
+        val lastDateStr = prefs[LAST_UPDATE_DATE] ?: "0"
+        return calculateLuckyIndices(zodiacIndex, lastDateStr.toLongOrNull() ?: 0L, totalCount)
+    }
+
     val userInfo: Flow<UserStats> = context.dataStore.data.map { prefs ->
         val month = prefs[USER_MONTH] ?: 1
         val day = prefs[USER_DAY] ?: 1
         val zodiac = prefs[USER_ZODIAC] ?: getZodiacSign(month, day)
-        val zodiacIndex = prefs[USER_ZODIAC_INDEX] ?: zodiacNameToIndex[zodiac] ?: 1
+        val zodiacIndex: Int = prefs[USER_ZODIAC_INDEX] ?: (zodiacNameToIndex[zodiac] ?: 1)
         UserStats(prefs[USER_NAME] ?: "", month, day, zodiac, zodiacIndex)
     }.distinctUntilChanged()
 

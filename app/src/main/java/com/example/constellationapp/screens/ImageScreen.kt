@@ -52,33 +52,32 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
     val userStats by dataStoreManager.userInfo.collectAsState(initial = null)
     val displayDate by dataStoreManager.lastUpdateDate.collectAsState(initial = "오늘")
 
+    var selectedZodiac by remember { mutableStateOf<String?>(null) }
+    var currentLuckyIndices by remember { mutableStateOf<List<Int>>(emptyList()) }
+
+    // 유저 정보다 로드되면 선택된 별자리를 초기화
+    LaunchedEffect(userStats) {
+        if (selectedZodiac == null && userStats != null) {
+            selectedZodiac = userStats?.zodiac
+        }
+    }
+
+    // 선택된 별자리가 바뀌면 지수 다시 계산 (데이터스토어 변경 없음)
+    LaunchedEffect(selectedZodiac) {
+        selectedZodiac?.let { zodiac ->
+            currentLuckyIndices = dataStoreManager.getLuckyIndicesForZodiac(zodiac, allItems.size)
+        }
+    }
+
     LaunchedEffect(Unit) {
         dataStoreManager.updateHiddenIndicesIfNeeded(allItems.size)
     }
 
-    val todayItems = remember(luckyIndices) {
-        luckyIndices.mapNotNull { index -> allItems.getOrNull(index) }
+    val todayItems = remember(currentLuckyIndices) {
+        currentLuckyIndices.mapNotNull { index -> allItems.getOrNull(index) }
     }
 
     Scaffold(
-//        topBar = {
-//            CenterAlignedTopAppBar(
-//                windowInsets = WindowInsets(0, 0, 0, 0),
-//                modifier = Modifier.height(45.dp),
-//                title = { },
-//                navigationIcon = {
-//                    IconButton(onClick = { /* 뒤로가기 */ }) {
-//                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로", tint = Color(0xFF6A8CFF))
-//                    }
-//                },
-////                actions = {
-////                    IconButton(onClick = { /* 공유 */ }) {
-////                        Icon(Icons.Default.Share, contentDescription = "공유")
-////                    }
-////                },
-//                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
-//            )
-//        },
         containerColor = Color.White
     ) { paddingValues ->
         LazyVerticalGrid(
@@ -97,7 +96,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                         .padding(top = 24.dp, bottom = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val zodiacIndex = userStats?.zodiacIndex ?: 1
+                    val zodiacIndex = selectedZodiac?.let { DataStoreManager.zodiacNameToIndex[it] } ?: 1
                     val iconResId = context.resources.getIdentifier(
                         "icon_zodiac_$zodiacIndex", 
                         "drawable", 
@@ -113,11 +112,9 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     ZodiacSelector(
-                        currentZodiac = userStats?.zodiac ?: "별자리",
+                        currentZodiac = selectedZodiac ?: "별자리",
                         onZodiacSelected = { zodiac ->
-                            scope.launch {
-                                dataStoreManager.updateZodiacAndItems(zodiac, allItems.size)
-                            }
+                            selectedZodiac = zodiac
                         }
                     )
 

@@ -10,3 +10,6 @@
 local.properties
 .kotlin
 node_modules
+*.ps1
+build.log
+.vscode

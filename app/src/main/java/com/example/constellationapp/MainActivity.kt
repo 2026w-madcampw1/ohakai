@@ -9,10 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,15 +35,18 @@ import com.example.constellationapp.screens.*
 import com.example.constellationapp.ui.theme.ConstellationAppTheme
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import androidx.compose.foundation.layout.Column
 
 enum class AppDestinations(
     val route: String,
     val label: String,
-    val icon: ImageVector
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
 ) {
-    Horoscope("horoscope", "운세", Icons.Default.DateRange),
-    LuckyItem("luckyItem", "아이템", Icons.Default.Star),
-    Drawing("drawing", "그리기", Icons.Default.Create)
+    Horoscope("horoscope", "순위", Icons.Filled.Assessment, Icons.Outlined.Assessment),
+    LuckyItem("luckyItem", "운세", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome),
+    Drawing("drawing", "그리기", Icons.Filled.Brush, Icons.Outlined.Brush),
+    //Settings("settings_placeholder", "설정", Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
 class MainActivity : ComponentActivity() {
@@ -78,47 +81,53 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(
-                    modifier = Modifier.height(60.dp),
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                    tonalElevation = 0.dp
-                ) {
-                    AppDestinations.entries.forEach { destination ->
-                        val isSelected = currentRoute == destination.route || 
-                                        (destination == AppDestinations.Drawing && currentRoute?.startsWith("drawing/") == true)
-                        
-                        NavigationBarItem(
-                            selected = isSelected,
-                            onClick = {
-                                if (!isSelected) {
-                                    navController.navigate(destination.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+                Column {
+                    HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                    NavigationBar(
+                        modifier = Modifier.height(80.dp),
+                        containerColor = Color.White,
+                        tonalElevation = 0.dp
+                    ) {
+                        AppDestinations.entries.forEach { destination ->
+                            val isSelected = currentRoute == destination.route || 
+                                            (destination == AppDestinations.Drawing && currentRoute?.startsWith("drawing/") == true)
+                            
+                            NavigationBarItem(
+                                selected = isSelected,
+                                onClick = {
+                                    if (!isSelected && !destination.route.contains("placeholder")) {
+                                        navController.navigate(destination.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
                                     }
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = destination.icon,
-                                    contentDescription = destination.label,
-                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    modifier = Modifier.offset(y = 4.dp)
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = if (isSelected) destination.selectedIcon else destination.unselectedIcon,
+                                        contentDescription = destination.label,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = destination.label,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Color(0xFF3B82F6),
+                                    selectedTextColor = Color(0xFF3B82F6),
+                                    unselectedIconColor = Color(0xFF94A3B8),
+                                    unselectedTextColor = Color(0xFF94A3B8),
+                                    indicatorColor = Color.Transparent
                                 )
-                            },
-                            label = {
-                                Text(
-                                    text = destination.label,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-                                    modifier = Modifier.offset(y = 2.dp)
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(indicatorColor = Color.Transparent)
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -149,7 +158,7 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                 }
                 composable(AppDestinations.LuckyItem.route) { 
                     ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = { index ->
-                        navController.navigate("${AppDestinations.Drawing.route}/$index") {
+                        navController.navigate("drawing/$index") {
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -157,7 +166,7 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                 }
                 // 특정 아이템 번호를 받아서 들어가는 경우
                 composable(
-                    route = "${AppDestinations.Drawing.route}/{itemIndex}",
+                    route = "drawing/{itemIndex}",
                     arguments = listOf(navArgument("itemIndex") { type = NavType.IntType })
                 ) { backStackEntry ->
                     val index = backStackEntry.arguments?.getInt("itemIndex") ?: 0
@@ -177,7 +186,7 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                             } else {
                                 todayIndices // 다 해금했으면 전체 4개 중 랜덤
                             }
-                            lockedItemIndices.random()
+                            lockedItemIndices.randomOrNull() ?: todayIndices.firstOrNull() ?: 0
                         } else {
                             0 // 데이터 로딩 전 기본값
                         }

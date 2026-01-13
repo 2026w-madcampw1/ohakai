@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -245,19 +246,6 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int, onB
                     }
                 }
 
-                if (progress >= 1f) {
-                    Text(
-                        text = currentItem?.name ?: "",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 90.dp)
-                            .alpha(completionAlpha)
-                    )
-                }
-
                 currentItem?.let { item ->
                     Image(
                         painter = painterResource(id = item.sketchImageResId),
@@ -311,8 +299,31 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int, onB
 
                 if (progress >= 1f) {
                     Text(
+                        text = currentItem?.name ?: "",
+                        style = MaterialTheme.typography.displaySmall.copy(
+                            shadow = Shadow(
+                                color = Color.White,
+                                offset = Offset(0f, 0f),
+                                blurRadius = 60f
+                            )
+                        ),
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 90.dp)
+                            .alpha(completionAlpha)
+                    )
+
+                    Text(
                         text = currentItem?.description ?: "",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            shadow = Shadow(
+                                color = Color.White,
+                                offset = Offset(0f, 0f),
+                                blurRadius = 50f
+                            )
+                        ),
                         color = Color.Black.copy(alpha = 0.9f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier
