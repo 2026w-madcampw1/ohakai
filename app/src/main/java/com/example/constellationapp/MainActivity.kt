@@ -33,6 +33,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.constellationapp.screens.*
 import com.example.constellationapp.ui.theme.ConstellationAppTheme
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -142,9 +144,18 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                     })
                 }
                 composable(AppDestinations.Horoscope.route) {
+                    val scope = rememberCoroutineScope()
+
                     ListScreen(onItemClick = { name, content ->
-                        val encodedContent = URLEncoder.encode(content, StandardCharsets.UTF_8.toString())
-                        navController.navigate("constellationDetail/$name/$encodedContent")
+                        scope.launch {
+                            dataStoreManager.updateZodiacAndItems(name, LuckItemProvider.items.size)
+                            val cleaned = content.lines().filter { it.isNotBlank() }.joinToString("\n")
+                            dataStoreManager.updateHoroscopeMessage(cleaned)
+                            navController.navigate(AppDestinations.LuckyItem.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     })
                 }
                 composable(AppDestinations.LuckyItem.route) { 

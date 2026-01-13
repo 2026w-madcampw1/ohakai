@@ -106,8 +106,8 @@ class HoroscopeViewModel(application: Application) : AndroidViewModel(applicatio
                         if (horoscope.content.isNotBlank()) {
                             try {
                                 val translatedContent = translateText(horoscope.content)
-                                // 마침표 뒤에 공백이 오는 경우, 마침표와 줄바꿈으로 변경하여 개행을 적용합니다.
-                                val formattedContent = translatedContent.replace(". ", ".\n")
+                                // 마침표, 물음표, 느낌표 뒤에 공백이 오는 경우, 해당 문장 부호와 줄바꿈으로 변경하여 개행을 적용합니다.
+                                val formattedContent = translatedContent.replace(Regex("([.?!])\\s+"), "$1\n")
                                 horoscope.copy(content = formattedContent)
                             } catch (e: HttpException) {
                                 val errorBody = e.response()?.errorBody()?.string()

@@ -90,7 +90,7 @@ fun ListScreen(
                 ) {
                     items(constellations) { data ->
                         RankingCard(data = data, onClick = {
-                            onItemClick(data.name, data.content.lines().filter { it.isNotBlank() }.joinToString("\n"))
+                            onItemClick(data.name, data.content)
                         })
                     }
                 }

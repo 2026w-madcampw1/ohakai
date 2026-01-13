@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -21,7 +20,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -51,6 +49,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
     val hiddenSlotIndices by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
     val userStats by dataStoreManager.userInfo.collectAsState(initial = null)
     val displayDate by dataStoreManager.lastUpdateDate.collectAsState(initial = "오늘")
+    val horoscopeMessage by dataStoreManager.horoscopeMessage.collectAsState(initial = "")
 
     LaunchedEffect(Unit) {
         dataStoreManager.updateHiddenIndicesIfNeeded(allItems.size)
@@ -126,7 +125,8 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     Text(
-                        text = "오늘은 좋은 기운이 맴도는 날이에요\n아래의 아이템들이 당신의 하루를 더 빛내줄 거예요",
+                        text = if (horoscopeMessage.isNotBlank()) horoscopeMessage
+                               else "오늘 운세를 불러오는 중이에요",
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         color = Color.Gray,
