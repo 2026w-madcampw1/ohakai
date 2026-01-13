@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.Random
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
@@ -31,10 +34,49 @@ class DataStoreManager(private val context: Context) {
         val USER_ZODIAC_INDEX = intPreferencesKey("user_zodiac_index")
         val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
         val TODAY_LUCKY_INDICES = stringPreferencesKey("today_lucky_indices")
-        
-        // 슬롯 기반 잠금 (0, 1, 2, 3 위치 정보만 저장)
         val HIDDEN_ITEM_SLOTS = stringPreferencesKey("hidden_item_indices")
         val LAST_UPDATE_DATE = stringPreferencesKey("last_update_date")
+
+        // 운세 캐싱을 위한 키
+        private val HOROSCOPE_CACHE_DATE = stringPreferencesKey("horoscope_cache_date")
+        private val HOROSCOPE_CACHE_DATA = stringSetPreferencesKey("horoscope_cache_data")
+
+        val zodiacNameToIndex = mapOf(
+            "양자리" to 1, "황소자리" to 2, "쌍둥이자리" to 3, "게자리" to 4,
+            "사자자리" to 5, "처녀자리" to 6, "천칭자리" to 7, "전갈자리" to 8,
+            "궁수자리" to 9, "염소자리" to 10, "물병자리" to 11, "물고기자리" to 12
+        )
+    }
+
+    // --- 신규 추가: 운세 캐싱 관련 함수 ---
+
+    suspend fun saveHoroscopes(horoscopes: List<ConstellationData>) {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val cacheData = horoscopes.map { "${it.name}|${it.date}|${it.rank}|${it.content}" }.toSet()
+        context.dataStore.edit {
+            it[HOROSCOPE_CACHE_DATE] = today
+            it[HOROSCOPE_CACHE_DATA] = cacheData
+        }
+    }
+
+    suspend fun getTodaysHoroscopes(): List<ConstellationData>? {
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val prefs = context.dataStore.data.first()
+
+        if (prefs[HOROSCOPE_CACHE_DATE] == today) {
+            val cacheData = prefs[HOROSCOPE_CACHE_DATA]
+            if (!cacheData.isNullOrEmpty()) {
+                return cacheData.mapNotNull {
+                    val parts = it.split("|")
+                    if (parts.size == 4) {
+                        ConstellationData(parts[0], parts[1], parts[2].toIntOrNull() ?: 0, parts[3])
+                    } else {
+                        null
+                    }
+                }.sortedBy { it.rank }
+            }
+        }
+        return null
 
         val zodiacNameToIndex = mapOf(
             "양자리" to 1, "황소자리" to 2, "쌍둥이자리" to 3, "게자리" to 4,
@@ -148,8 +190,8 @@ class DataStoreManager(private val context: Context) {
         val businessCalendar = now.clone() as Calendar
         if (currentHour < 6) businessCalendar.add(Calendar.DAY_OF_YEAR, -1)
         
-        val dateInt = businessCalendar.get(Calendar.YEAR) * 10000 + 
-                     (businessCalendar.get(Calendar.MONTH) + 1) * 100 + 
+        val dateInt = businessCalendar.get(Calendar.YEAR) * 10000 +
+                     (businessCalendar.get(Calendar.MONTH) + 1) * 100 +
                      businessCalendar.get(Calendar.DAY_OF_MONTH)
         val todayStr = dateInt.toString()
         
