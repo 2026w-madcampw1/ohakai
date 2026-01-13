@@ -35,18 +35,18 @@ import com.example.constellationapp.R
 fun ConstellationDetailScreen(name: String, content: String) {
     val formattedContent = content.replace('+', ' ')
     val iconRes = when (name) {
-        "양자리" -> R.drawable.icon_aries
-        "황소자리" -> R.drawable.icon_taurus
-        "쌍둥이자리" -> R.drawable.icon_gemini
-        "게자리" -> R.drawable.icon_cancer
-        "사자자리" -> R.drawable.icon_leo
-        "처녀자리" -> R.drawable.icon_virgo
-        "천칭자리" -> R.drawable.icon_libra
-        "전갈자리" -> R.drawable.icon_scorpius
-        "사수자리" -> R.drawable.icon_sagittarius
-        "염소자리" -> R.drawable.icon_capricorn
-        "물병자리" -> R.drawable.icon_aquarius
-        "물고기자리" -> R.drawable.icon_pisces
+        "양자리" -> R.drawable.icon_zodiac_1
+        "황소자리" -> R.drawable.icon_zodiac_2
+        "쌍둥이자리" -> R.drawable.icon_zodiac_3
+        "게자리" -> R.drawable.icon_zodiac_4
+        "사자자리" -> R.drawable.icon_zodiac_5
+        "처녀자리" -> R.drawable.icon_zodiac_6
+        "천칭자리" -> R.drawable.icon_zodiac_7
+        "전갈자리" -> R.drawable.icon_zodiac_8
+        "사수자리" -> R.drawable.icon_zodiac_9
+        "염소자리" -> R.drawable.icon_zodiac_10
+        "물병자리" -> R.drawable.icon_zodiac_11
+        "물고기자리" -> R.drawable.icon_zodiac_12
         else -> R.drawable.constellation
     }
 

@@ -47,9 +47,7 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     
-    // 데이터스토어 상태 구독
     val luckyIndices by dataStoreManager.todayLuckyIndices.collectAsState(initial = emptyList())
-    // hiddenIndices는 이제 0,1,2,3 (슬롯 번호)을 의미함
     val hiddenSlotIndices by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
     val userStats by dataStoreManager.userInfo.collectAsState(initial = null)
     val displayDate by dataStoreManager.lastUpdateDate.collectAsState(initial = "오늘")
@@ -63,24 +61,24 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
     }
 
     Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                windowInsets = WindowInsets(0, 0, 0, 0),
-                modifier = Modifier.height(45.dp),
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = { /* 뒤로가기 */ }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로", tint = Color(0xFF6A8CFF))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* 공유 */ }) {
-                        Icon(Icons.Default.Share, contentDescription = "공유")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
-            )
-        },
+//        topBar = {
+//            CenterAlignedTopAppBar(
+//                windowInsets = WindowInsets(0, 0, 0, 0),
+//                modifier = Modifier.height(45.dp),
+//                title = { },
+//                navigationIcon = {
+//                    IconButton(onClick = { /* 뒤로가기 */ }) {
+//                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로", tint = Color(0xFF6A8CFF))
+//                    }
+//                },
+////                actions = {
+////                    IconButton(onClick = { /* 공유 */ }) {
+////                        Icon(Icons.Default.Share, contentDescription = "공유")
+////                    }
+////                },
+//                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+//            )
+//        },
         containerColor = Color.White
     ) { paddingValues ->
         LazyVerticalGrid(

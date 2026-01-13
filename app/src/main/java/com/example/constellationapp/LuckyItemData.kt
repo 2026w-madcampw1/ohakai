@@ -9,7 +9,6 @@ data class LuckyItemData(
     val realImageResId: Int,
     val sketchImageResId: Int,
     val stars: List<Offset> = emptyList(),
-    // 별자리 완성을 위해 연결해야 하는 정답 선들 (시작 인덱스 to 끝 인덱스)
     val requiredLines: List<Pair<Int, Int>> = emptyList()
 )
 

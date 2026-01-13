@@ -69,14 +69,9 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     val isOnboardingCompleted by dataStoreManager.isOnboardingCompleted.collectAsState(initial = null)
-    
-    // 오늘의 4개 아이템 인덱스 리스트 (실제 아이템 번호들)
     val todayIndices by dataStoreManager.todayLuckyIndices.collectAsState(initial = emptyList())
-    // 현재 잠겨있는 슬롯 번호들 (0, 1, 2, 3 중 일부)
     val hiddenSlots by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
-
     val bottomBarRoutes = AppDestinations.entries.map { it.route }
     val showBottomBar = currentRoute in bottomBarRoutes || currentRoute?.startsWith("drawing/") == true
 
@@ -131,7 +126,6 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
     ) { innerPadding ->
         if (isOnboardingCompleted != null) {
             val startRoute = if (isOnboardingCompleted == true) AppDestinations.Horoscope.route else "start"
-            
             NavHost(
                 navController = navController,
                 startDestination = startRoute,
@@ -140,7 +134,6 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                 composable("start") {
                     StartScreen(onStartClick = { navController.navigate("birthInput") })
                 }
-
                 composable("birthInput") {
                     BirthInputScreen(dataStoreManager = dataStoreManager, onNextClick = {
                         navController.navigate(AppDestinations.Horoscope.route) {
@@ -148,14 +141,12 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         }
                     })
                 }
-
                 composable(AppDestinations.Horoscope.route) {
                     ListScreen(onItemClick = { name, content ->
                         val encodedContent = URLEncoder.encode(content, StandardCharsets.UTF_8.toString())
                         navController.navigate("constellationDetail/$name/$encodedContent")
                     })
                 }
-                
                 composable(AppDestinations.LuckyItem.route) { 
                     ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = { index ->
                         navController.navigate("${AppDestinations.Drawing.route}/$index") {
@@ -164,7 +155,6 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         }
                     }) 
                 }
-
                 // 특정 아이템 번호를 받아서 들어가는 경우
                 composable(
                     route = "${AppDestinations.Drawing.route}/{itemIndex}",
@@ -177,7 +167,6 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         onBackClick = { navController.popBackStack() }
                     )
                 }
-
                 // [수정] 탭 버튼 클릭해서 들어가는 경우: 미해금 아이템 중 랜덤 선택
                 composable(AppDestinations.Drawing.route) {
                     val randomStartIndex = remember(todayIndices, hiddenSlots) {
@@ -193,14 +182,12 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                             0 // 데이터 로딩 전 기본값
                         }
                     }
-                    
                     DrawingScreen(
                         dataStoreManager = dataStoreManager, 
                         initialItemIndex = randomStartIndex, 
                         onBackClick = { navController.popBackStack() }
-                    ) 
+                    )
                 }
-
                 composable("constellationDetail/{name}/{content}") { backStackEntry ->
                     val name = backStackEntry.arguments?.getString("name") ?: ""
                     val content = backStackEntry.arguments?.getString("content") ?: ""

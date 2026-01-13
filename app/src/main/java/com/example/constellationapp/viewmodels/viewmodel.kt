@@ -130,6 +130,7 @@ class HoroscopeViewModel(application: Application) : AndroidViewModel(applicatio
                 _apiError.value = "데이터를 가져오는 데 실패했습니다: ${e.message}"
             } finally {
                 _isLoading.value = false
+                Log.d("HoroscopeViewModel", _apiError.toString())
             }
         }
     }

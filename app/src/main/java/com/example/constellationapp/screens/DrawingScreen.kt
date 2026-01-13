@@ -369,31 +369,31 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int, onB
             }
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(
-                onClick = { if (currentItemIndex > 0) currentItemIndex-- },
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
-            ) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "이전", tint = primaryColor)
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(
-                onClick = {
-                    currentItemIndex = getNextIndex()
-                },
-                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
-            ) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "다음", tint = primaryColor)
-            }
-        }
+//        Row(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            IconButton(
+//                onClick = { if (currentItemIndex > 0) currentItemIndex-- },
+//                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
+//            ) {
+//                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "이전", tint = primaryColor)
+//            }
+//
+//            Spacer(modifier = Modifier.weight(1f))
+//
+//            IconButton(
+//                onClick = {
+//                    currentItemIndex = getNextIndex()
+//                },
+//                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
+//            ) {
+//                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "다음", tint = primaryColor)
+//            }
+//        }
     }
 }
 
