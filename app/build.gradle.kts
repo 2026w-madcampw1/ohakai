@@ -89,8 +89,8 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Jsoup은 더 이상 필요 없으므로 주석 처리합니다.
-    // implementation("org.jsoup:jsoup:1.14.3")
+    // HTML 파싱을 위한 Jsoup 라이브러리
+    implementation("org.jsoup:jsoup:1.22.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -12,22 +12,33 @@ import com.example.constellationapp.network.ApiClient
 import com.example.constellationapp.network.HoroscopeApi
 import com.example.constellationapp.network.Message
 import com.example.constellationapp.network.OpenAiRequest
+import com.example.constellationapp.network.WeekendHoroscopeService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import java.util.Calendar
 
 class HoroscopeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val dataStoreManager = DataStoreManager(application)
 
+    // 평일 API용 별자리 맵
     private val signCodeToName = mapOf(
         "01" to "양자리", "02" to "황소자리", "03" to "쌍둥이자리",
         "04" to "게자리", "05" to "사자자리", "06" to "처녀자리",
         "07" to "천칭자리", "08" to "전갈자리", "09" to "사수자리",
         "10" to "염소자리", "11" to "물병자리", "12" to "물고기자리"
+    )
+
+    // 주말 스크래핑용 별자리 맵 (일본어 -> 한국어)
+    private val japaneseToKoreanSignMap = mapOf(
+        "おひつじ座" to "양자리", "おうし座" to "황소자리", "ふたご座" to "쌍둥이자리",
+        "かに座" to "게자리", "しし座" to "사자자리", "おとめ座" to "처녀자리",
+        "てんびん座" to "천칭자리", "さそり座" to "전갈자리", "いて座" to "사수자리",
+        "やぎ座" to "염소자리", "みずがめ座" to "물병자리", "うお座" to "물고기자리"
     )
 
     private val constellationInfo = mapOf(
@@ -54,50 +65,66 @@ class HoroscopeViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun fetchHoroscopes() {
         viewModelScope.launch {
-            // 1. 먼저 캐시된 데이터가 있는지 확인
             val cachedHoroscopes = dataStoreManager.getTodaysHoroscopes()
             if (cachedHoroscopes != null) {
                 _horoscopes.value = cachedHoroscopes
-                return@launch // 캐시된 데이터가 있으면 API 호출 없이 종료
-            }
-
-            // 2. 캐시가 없으면 API 호출 진행
-            if (horoscopes.value.isNotEmpty() || isLoading.value || _isApiKeyMissing.value) {
                 return@launch
             }
-            
+
+            if (isLoading.value || _isApiKeyMissing.value) {
+                return@launch
+            }
+
             _isLoading.value = true
             _apiError.value = null
             try {
-                val ohaAsaResponse = HoroscopeApi.retrofitService.getHoroscopes()
-                val horoscopeDetails = ohaAsaResponse.firstOrNull()?.detail ?: emptyList()
+                val today = Calendar.getInstance()
+                val dayOfWeek = today.get(Calendar.DAY_OF_WEEK)
+                val isWeekend = dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY
 
-                val processedUiData = horoscopeDetails.map { detail ->
+                // 1. 주말/평일에 따라 다른 데이터 소스에서 원본 데이터를 가져옴
+                val rawHoroscopes: List<ConstellationData> = if (isWeekend) {
+                    Log.d("HoroscopeViewModel", "주말입니다. 스크래핑을 시작합니다.")
+                    val weekendHoroscopes = WeekendHoroscopeService.fetchWeekendHoroscopes()
+                    // 일본어 별자리 이름을 한국어로 변환
+                    weekendHoroscopes.map {
+                        val koreanName = japaneseToKoreanSignMap[it.name] ?: it.name
+                        it.copy(name = koreanName, date = constellationInfo[koreanName] ?: "")
+                    }
+                } else {
+                    Log.d("HoroscopeViewModel", "평일입니다. API를 호출합니다.")
+                    val ohaAsaResponse = HoroscopeApi.retrofitService.getHoroscopes()
+                    val horoscopeDetails = ohaAsaResponse.firstOrNull()?.detail ?: emptyList()
+                    horoscopeDetails.map { detail ->
+                        detail.toConstellationData(detail.content)
+                    }
+                }
+
+                // 2. 가져온 데이터를 기반으로 번역 및 개행 처리 진행
+                val translatedHoroscopes = rawHoroscopes.map { horoscope ->
                     async {
-                        val originalContent = detail.content.replace("\t", "\n")
-                        val constellationData = detail.toConstellationData(originalContent)
-
-                        if (originalContent.isNotBlank()) {
+                        if (horoscope.content.isNotBlank()) {
                             try {
-                                val translatedContent = translateText(originalContent)
-                                constellationData.copy(content = translatedContent)
+                                val translatedContent = translateText(horoscope.content)
+                                // 마침표 뒤에 공백이 오는 경우, 마침표와 줄바꿈으로 변경하여 개행을 적용합니다.
+                                val formattedContent = translatedContent.replace(". ", ".\n")
+                                horoscope.copy(content = formattedContent)
                             } catch (e: HttpException) {
                                 val errorBody = e.response()?.errorBody()?.string()
-                                _apiError.value = "API 오류 발생: ${e.code()} ${e.message()}\n${errorBody}"
-                                constellationData
+                                _apiError.value = "API 오류: ${e.code()} ${e.message()}\n${errorBody}"
+                                horoscope
                             } catch (e: Exception) {
-                                _apiError.value = "번역 중 알 수 없는 오류: ${e.message}"
-                                constellationData
+                                _apiError.value = "번역 중 오류: ${e.message}"
+                                horoscope
                             }
                         } else {
-                            constellationData
+                            horoscope
                         }
                     }
                 }.awaitAll()
 
-                _horoscopes.value = processedUiData
-                // 3. 번역된 최종 결과를 DataStore에 저장
-                dataStoreManager.saveHoroscopes(processedUiData)
+                _horoscopes.value = translatedHoroscopes
+                dataStoreManager.saveHoroscopes(translatedHoroscopes)
 
             } catch (e: Exception) {
                 _apiError.value = "데이터를 가져오는 데 실패했습니다: ${e.message}"
