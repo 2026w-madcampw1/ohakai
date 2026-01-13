@@ -5,18 +5,20 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
+import java.util.Random
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_prefs")
 
-// 사용자 정보를 묶어서 전달하기 위한 데이터 클래스
 data class UserStats(
     val name: String,
     val month: Int,
     val day: Int,
-    val zodiac: String
+    val zodiac: String,
+    val zodiacIndex: Int
 )
 
 class DataStoreManager(private val context: Context) {
@@ -26,14 +28,31 @@ class DataStoreManager(private val context: Context) {
         val USER_MONTH = intPreferencesKey("user_month")
         val USER_DAY = intPreferencesKey("user_day")
         val USER_ZODIAC = stringPreferencesKey("user_zodiac")
+        val USER_ZODIAC_INDEX = intPreferencesKey("user_zodiac_index")
         val IS_ONBOARDING_COMPLETED = booleanPreferencesKey("is_onboarding_completed")
-        val HIDDEN_ITEM_INDICES = stringPreferencesKey("hidden_item_indices")
+        val TODAY_LUCKY_INDICES = stringPreferencesKey("today_lucky_indices")
+        
+        // 슬롯 기반 잠금 (0, 1, 2, 3 위치 정보만 저장)
+        val HIDDEN_ITEM_SLOTS = stringPreferencesKey("hidden_item_indices")
         val LAST_UPDATE_DATE = stringPreferencesKey("last_update_date")
+
+        val zodiacNameToIndex = mapOf(
+            "양자리" to 1, "황소자리" to 2, "쌍둥이자리" to 3, "게자리" to 4,
+            "사자자리" to 5, "처녀자리" to 6, "천칭자리" to 7, "전갈자리" to 8,
+            "궁수자리" to 9, "염소자리" to 10, "물병자리" to 11, "물고기자리" to 12
+        )
     }
 
-    /**
-     * 월과 일을 기준으로 별자리를 계산합니다.
-     */
+    private fun calculateLuckyIndices(zodiacIndex: Int, daySeed: Long, totalCount: Int): List<Int> {
+        val allIndices = (0 until totalCount).toList().shuffled(Random(daySeed))
+        val startOffset = ((zodiacIndex - 1) * 4) % totalCount
+        val result = mutableListOf<Int>()
+        for (i in 0 until 4) {
+            result.add(allIndices[(startOffset + i) % totalCount])
+        }
+        return result.shuffled(Random(daySeed + zodiacIndex))
+    }
+
     private fun getZodiacSign(month: Int, day: Int): String {
         return when (month) {
             1 -> if (day >= 20) "물병자리" else "염소자리"
@@ -52,104 +71,94 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // 이름/생일 저장 시 별자리도 함께 계산하여 저장
     suspend fun saveUserInfo(name: String, month: Int, day: Int) {
         val zodiac = getZodiacSign(month, day)
+        val zodiacIndex = zodiacNameToIndex[zodiac] ?: 1
         context.dataStore.edit { prefs ->
             prefs[USER_NAME] = name
             prefs[USER_MONTH] = month
             prefs[USER_DAY] = day
             prefs[USER_ZODIAC] = zodiac
+            prefs[USER_ZODIAC_INDEX] = zodiacIndex
             prefs[IS_ONBOARDING_COMPLETED] = true
         }
     }
 
-    // 별자리별 달성도 저장
-    suspend fun saveProgress(itemId: Int, progress: Float) {
-        val key = floatPreferencesKey("progress_$itemId")
+    suspend fun updateZodiacAndItems(newZodiac: String, totalItemCount: Int) {
+        val zodiacIndex = zodiacNameToIndex[newZodiac] ?: 1
         context.dataStore.edit { prefs ->
-            prefs[key] = progress
+            prefs[USER_ZODIAC] = newZodiac
+            prefs[USER_ZODIAC_INDEX] = zodiacIndex
+            // 해금 상태(HIDDEN_ITEM_INDICES)는 유지함 (슬롯 번호 기준이므로)
         }
     }
 
-    // 사용자 정보 스트림 (UserStats 객체로 반환)
     val userInfo: Flow<UserStats> = context.dataStore.data.map { prefs ->
-        UserStats(
-            name = prefs[USER_NAME] ?: "",
-            month = prefs[USER_MONTH] ?: 1,
-            day = prefs[USER_DAY] ?: 1,
-            zodiac = prefs[USER_ZODIAC] ?: ""
-        )
-    }
+        val month = prefs[USER_MONTH] ?: 1
+        val day = prefs[USER_DAY] ?: 1
+        val zodiac = prefs[USER_ZODIAC] ?: getZodiacSign(month, day)
+        val zodiacIndex = prefs[USER_ZODIAC_INDEX] ?: zodiacNameToIndex[zodiac] ?: 1
+        UserStats(prefs[USER_NAME] ?: "", month, day, zodiac, zodiacIndex)
+    }.distinctUntilChanged()
 
-    // 온보딩 완료 여부
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[IS_ONBOARDING_COMPLETED] ?: false
-    }
+    }.distinctUntilChanged()
 
-    // 특정 별자리 달성도 가져오기
-    fun getProgress(itemId: Int): Flow<Float> = context.dataStore.data.map { prefs ->
-        prefs[floatPreferencesKey("progress_$itemId")] ?: 0f
-    }
+    val todayLuckyIndices: Flow<List<Int>> = context.dataStore.data.map { prefs ->
+        val zodiacIndex = prefs[USER_ZODIAC_INDEX] ?: 1
+        val lastDateStr = prefs[LAST_UPDATE_DATE] ?: "0"
+        calculateLuckyIndices(zodiacIndex, lastDateStr.toLongOrNull() ?: 0L, 21)
+    }.distinctUntilChanged()
 
-    // 마지막 갱신 날짜 스트림 (리포매팅 포함)
+    val hiddenItemIndices: Flow<Set<Int>> = context.dataStore.data.map { prefs ->
+        val raw = prefs[HIDDEN_ITEM_SLOTS] ?: ""
+        if (raw.isEmpty()) emptySet()
+        else raw.split(",").mapNotNull { it.toIntOrNull() }.toSet()
+    }.distinctUntilChanged()
+
     val lastUpdateDate: Flow<String> = context.dataStore.data.map { prefs ->
         val raw = prefs[LAST_UPDATE_DATE] ?: ""
-        if (raw.length >= 6) { // yyyyM d 또는 yyyyMMdd 형태 대응
-            // 안전하게 Calendar를 이용해 오늘 날짜를 기본 포맷으로 생성
-            val now = Calendar.getInstance()
-            "${now.get(Calendar.YEAR)}년 ${now.get(Calendar.MONTH) + 1}월 ${now.get(Calendar.DAY_OF_MONTH)}일"
+        if (raw.length >= 8) {
+            val y = raw.substring(0, 4)
+            val m = raw.substring(4, 6).toIntOrNull()?.toString() ?: ""
+            val d = raw.substring(6, 8).toIntOrNull()?.toString() ?: ""
+            "${y}년 ${m}월 ${d}일"
         } else {
             "오늘"
         }
-    }
-
-    // 숨겨진 인덱스 스트림
-    val hiddenItemIndices: Flow<Set<Int>> = context.dataStore.data.map { prefs ->
-        val raw = prefs[HIDDEN_ITEM_INDICES] ?: ""
-        if (raw.isEmpty()) emptySet()
-        else raw.split(",").mapNotNull { it.toIntOrNull() }.toSet()
-    }
+    }.distinctUntilChanged()
 
     /**
-     * 그리기에 성공한 아이템을 숨김 목록에서 제거함
+     * 슬롯 인덱스(0, 1, 2, 3)를 직접 받아서 잠금 해제
      */
-    suspend fun removeHiddenItem(index: Int) {
+    suspend fun removeHiddenSlot(slotIndex: Int) {
         context.dataStore.edit { prefs ->
-            val raw = prefs[HIDDEN_ITEM_INDICES] ?: ""
-            if (raw.isNotEmpty()) {
-                val currentIndices = raw.split(",").mapNotNull { it.toIntOrNull() }.toMutableSet()
-                if (currentIndices.remove(index)) {
-                    prefs[HIDDEN_ITEM_INDICES] = currentIndices.sorted().joinToString(",")
-                }
+            val raw = prefs[HIDDEN_ITEM_SLOTS] ?: ""
+            val currentIndices = raw.split(",").mapNotNull { it.toIntOrNull() }.toMutableSet()
+            if (currentIndices.remove(slotIndex)) {
+                prefs[HIDDEN_ITEM_SLOTS] = currentIndices.sorted().joinToString(",")
             }
         }
     }
 
-    /**
-     * 매일 아침 6시 기준으로 인덱스를 갱신해야 하는지 확인하고 필요시 갱신함
-     */
     suspend fun updateHiddenIndicesIfNeeded(totalItemCount: Int) {
         val now = Calendar.getInstance()
         val currentHour = now.get(Calendar.HOUR_OF_DAY)
-        
         val businessCalendar = now.clone() as Calendar
-        if (currentHour < 6) {
-            businessCalendar.add(Calendar.DAY_OF_YEAR, -1)
-        }
+        if (currentHour < 6) businessCalendar.add(Calendar.DAY_OF_YEAR, -1)
         
-        val todayStr = "${businessCalendar.get(Calendar.YEAR)}${businessCalendar.get(Calendar.MONTH)}${businessCalendar.get(Calendar.DAY_OF_MONTH)}"
+        val dateInt = businessCalendar.get(Calendar.YEAR) * 10000 + 
+                     (businessCalendar.get(Calendar.MONTH) + 1) * 100 + 
+                     businessCalendar.get(Calendar.DAY_OF_MONTH)
+        val todayStr = dateInt.toString()
         
         val prefs = context.dataStore.data.first()
-        val lastUpdateDate = prefs[LAST_UPDATE_DATE] ?: ""
+        val lastUpdateDateVal = prefs[LAST_UPDATE_DATE] ?: ""
 
-        if (lastUpdateDate != todayStr || prefs[HIDDEN_ITEM_INDICES] == null) {
-            val count = (1..3).random().coerceAtMost(totalItemCount)
-            val newIndices = (0 until totalItemCount).shuffled().take(count).sorted()
-            val newIndicesStr = newIndices.joinToString(",")
-            
+        if (lastUpdateDateVal != todayStr || prefs[HIDDEN_ITEM_SLOTS] == null) {
             context.dataStore.edit { editPrefs ->
-                editPrefs[HIDDEN_ITEM_INDICES] = newIndicesStr
+                editPrefs[HIDDEN_ITEM_SLOTS] = "0,1,2,3"
                 editPrefs[LAST_UPDATE_DATE] = todayStr
             }
         }

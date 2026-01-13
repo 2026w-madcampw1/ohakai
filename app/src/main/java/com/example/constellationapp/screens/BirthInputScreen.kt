@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -16,7 +18,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.constellationapp.DataStoreManager
@@ -29,6 +33,7 @@ fun BirthInputScreen(dataStoreManager: DataStoreManager, onNextClick: () -> Unit
     var selectedMonth by rememberSaveable { mutableIntStateOf(1) }
     var selectedDay by rememberSaveable { mutableIntStateOf(1) }
     val scope = rememberCoroutineScope()
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Column(
         modifier = Modifier
@@ -59,14 +64,23 @@ fun BirthInputScreen(dataStoreManager: DataStoreManager, onNextClick: () -> Unit
                 .fillMaxHeight(0.7f),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 이름 입력
+            // 이름 입력: 10자 제한, 문자만 허용 (숫자, 특수문자, 공백 제외)
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { input ->
+                    val filtered = input.replace(Regex("[^a-zA-Zㄱ-ㅎㅏ-ㅣ가-힣]"), "")
+                    if (filtered.length <= 10) {
+                        name = filtered
+                    }
+                },
                 label = { Text("이름") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { keyboardController?.hide() }
+                ),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,

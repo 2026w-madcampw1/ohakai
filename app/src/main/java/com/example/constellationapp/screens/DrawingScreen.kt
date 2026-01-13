@@ -37,13 +37,37 @@ import com.example.constellationapp.DataStoreManager
 import com.example.constellationapp.LuckItemProvider
 import com.example.constellationapp.R
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 @Composable
-fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
+fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int, onBackClick: () -> Unit) {
+    // 탭 전환 등으로 initialItemIndex가 바뀌면 상태 동기화
     var currentItemIndex by remember(initialItemIndex) { mutableIntStateOf(initialItemIndex) }
     val haptic = LocalHapticFeedback.current
     val primaryColor = MaterialTheme.colorScheme.primary 
+    val scope = rememberCoroutineScope()
+
+    // 오늘의 아이템 리스트와 잠긴 슬롯 정보(0,1,2,3) 구독
+    val todayIndices by dataStoreManager.todayLuckyIndices.collectAsState(initial = emptyList())
+    val hiddenSlots by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
+
+    // 지능형 다음 인덱스 추출 함수 (남은 슬롯 우선)
+    val getNextIndex: () -> Int = {
+        if (todayIndices.isNotEmpty()) {
+            val lockedItemIndices = hiddenSlots.mapNotNull { todayIndices.getOrNull(it) }.filter { it != currentItemIndex }
+            if (lockedItemIndices.isNotEmpty()) {
+                lockedItemIndices.random()
+            } else {
+                // 다 해금 시 전체 랜덤
+                val all = LuckItemProvider.items.indices.toMutableList()
+                all.remove(currentItemIndex)
+                all.random()
+            }
+        } else {
+            0
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -118,20 +142,23 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                 label = "CompletionAlpha"
             )
 
-            // [추가] 다음 버튼 상태 및 애니메이션
-            var showNextButton by remember(targetIndex) { mutableStateOf(false) }
-            val nextButtonAlpha by animateFloatAsState(
-                targetValue = if (showNextButton) 1f else 0f,
+            // 버튼 상태 및 애니메이션
+            var showActionButtons by remember(targetIndex) { mutableStateOf(false) }
+            val actionButtonsAlpha by animateFloatAsState(
+                targetValue = if (showActionButtons) 1f else 0f,
                 animationSpec = tween(durationMillis = 600),
-                label = "NextButtonAlpha"
+                label = "ActionButtonsAlpha"
             )
 
             LaunchedEffect(progress) {
                 if (progress >= 1f) {
-                    dataStoreManager.removeHiddenItem(targetIndex)
-                    // [추가] 완성 2.5초 뒤 다음 버튼 노출
-                    delay(2000)
-                    showNextButton = true
+                    // [수정 완료] 현재 아이템이 오늘의 세트 중 몇 번째 슬롯인지 확인하여 해당 슬롯 해금
+                    val slotIndex = todayIndices.indexOf(targetIndex)
+                    if (slotIndex != -1) {
+                        dataStoreManager.removeHiddenSlot(slotIndex)
+                    }
+                    delay(2500)
+                    showActionButtons = true
                 }
             }
 
@@ -295,22 +322,31 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
                     )
                 }
 
-                // [추가] 다음 버튼 UI
-                if (showNextButton) {
-                    Button(
-                        onClick = {
-                            if (currentItemIndex < LuckItemProvider.items.size - 1) {
-                                currentItemIndex++
-                            }
-                        },
+                if (showActionButtons) {
+                    Row(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 40.dp)
-                            .alpha(nextButtonAlpha),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                            .alpha(actionButtonsAlpha),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("다음", fontWeight = FontWeight.Bold, color = Color.White)
+                        Button(
+                            onClick = { onBackClick() },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray.copy(alpha = 0.6f))
+                        ) {
+                            Text("돌아가기", fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+
+                        Button(
+                            onClick = {
+                                currentItemIndex = getNextIndex()
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                        ) {
+                            Text("다음", fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 }
             }
@@ -333,29 +369,31 @@ fun DrawingScreen(dataStoreManager: DataStoreManager, initialItemIndex: Int) {
             }
         }
 
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            IconButton(
-//                onClick = { if (currentItemIndex > 0) currentItemIndex-- },
-//                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
-//            ) {
-//                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "이전", tint = primaryColor)
-//            }
-//
-//            Spacer(modifier = Modifier.weight(1f))
-//
-//            IconButton(
-//                onClick = { if (currentItemIndex < LuckItemProvider.items.size - 1) currentItemIndex++ },
-//                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
-//            ) {
-//                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "다음", tint = primaryColor)
-//            }
-//        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = { if (currentItemIndex > 0) currentItemIndex-- },
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
+            ) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "이전", tint = primaryColor)
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            IconButton(
+                onClick = {
+                    currentItemIndex = getNextIndex()
+                },
+                modifier = Modifier.size(44.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.2f))
+            ) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "다음", tint = primaryColor)
+            }
+        }
     }
 }
 
