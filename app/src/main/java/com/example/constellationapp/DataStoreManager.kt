@@ -41,8 +41,20 @@ class DataStoreManager(private val context: Context) {
         // 운세 캐싱을 위한 키
         private val HOROSCOPE_CACHE_DATE = stringPreferencesKey("horoscope_cache_date")
         private val HOROSCOPE_CACHE_DATA = stringSetPreferencesKey("horoscope_cache_data")
+        private val HOROSCOPE_MESSAGE_KEY = stringPreferencesKey("horoscope_message")
 
         val zodiacNameToIndex = ZodiacConstants.zodiacNameToIndex
+    }
+
+    val horoscopeMessage: Flow<String> =
+        context.dataStore.data.map { prefs ->
+            prefs[HOROSCOPE_MESSAGE_KEY] ?: ""
+        }
+
+    suspend fun updateHoroscopeMessage(message: String) {
+        context.dataStore.edit { prefs ->
+            prefs[HOROSCOPE_MESSAGE_KEY] = message
+        }
     }
 
     // --- 신규 추가: 운세 캐싱 관련 함수 ---
