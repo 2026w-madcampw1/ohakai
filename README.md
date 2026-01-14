@@ -1,16 +1,16 @@
-# ConstellationApp
+# ⭐ ConstellationApp
 
 > 사용자의 생년월일을 기반으로 운세 정보를 제공하고, 인터랙티브 그림판으로 별자리를 그려보는 안드로이드 앱
 
 **ConstellationApp**은 Jetpack Compose를 사용하여 100% 코드로 UI를 구축한 현대적인 안드로이드 애플리케이션입니다. 운세 정보를 확인하는 기능과 더불어, `Canvas`와 `detectDragGestures`를 조합하여 사용자에게 별자리를 직접 그려보는 동적이고 몰입감 높은 경험을 선사합니다. OpenAI API 연동을 통해 별자리에 대한 풍부한 설명을 제공하는 것 또한 주요 특징입니다.
 
-## 스크린샷 (Screenshots)
+## 📸 스크린샷 (Screenshots)
 
 | 운세 순위 | 오늘의 운세 | 별자리 그리기 |
 |:---:|:---:|:---:|
 | *(Screenshot Placeholder)* | *(Screenshot Placeholder)* | *(Screenshot Placeholder)* |
 
-## 목차
+## 📋 목차
 
 1. [주요 기능 (Features)](#-주요-기능-features)
 2. [데이터 처리 과정](#-데이터-처리-과정)
@@ -22,7 +22,7 @@
 
 ---
 
-## 주요 기능 (Features)
+## ✨ 주요 기능 (Features)
 
 앱의 모든 화면은 Jetpack Compose를 사용하여 선언적으로 구현되었으며, `screens` 패키지 내에 각 기능별로 모듈화되어 있습니다.
 
@@ -48,7 +48,7 @@
 
 ---
 
-## 데이터 처리 과정
+## 🔄 데이터 처리 과정
 
 이 앱의 핵심 기능 중 하나는 외부 소스에서 운세 데이터를 가져와 가공하여 사용자에게 보여주는 것입니다. 이 모든 과정은 `HoroscopeRepository`에서 총괄하며, **캐싱, 데이터 소스 분기, 병렬 처리, AI 번역** 등 다양한 기술이 적용됩니다.
 
@@ -74,7 +74,7 @@
 
 ---
 
-## 아키텍처 및 사용 기술 (Architecture & Tech Stack)
+## 🛠️ 아키텍처 및 사용 기술 (Architecture & Tech Stack)
 
 이 프로젝트는 Google이 권장하는 **현대적인 안드로이드 앱 아키텍처(Modern App Architecture)** 가이드를 따르며, 관심사 분리(Separation of Concerns), 단일 진실 공급원(Single Source of Truth), 단방향 데이터 흐름(Unidirectional Data Flow) 원칙을 지향합니다.
 
@@ -94,7 +94,6 @@
 
 ### 사용 기술 (Tech Stack)
 
->>>>>>> f5466f6e8be7269bb7092f881435bcd014f98bfb
 - **언어**: Kotlin 100%
 - **UI**: Jetpack Compose (Navigation, Material3, Animation)
 - **아키텍처**: Android Architecture Components (ViewModel, Lifecycle, Navigation)
@@ -108,35 +107,7 @@
 
 ---
 
-<<<<<<< HEAD
-## 설치 및 실행 방법
-
-1. **저장소 복제**:
-    
-    ```bash
-    git clone <https://github.com/2026w-madcampw1/ohakai.git>
-    
-    ```
-    
-2. **API 키 설정**:
-    - 프로젝트의 루트 디렉토리에 `local.properties` 파일을 생성합니다.
-    - 파일에 다음과 같이 OpenAI API 키를 추가합니다:
-        
-        ```
-        OPENAI_API_KEY="YOUR_API_KEY"
-        
-        ```
-        
-3. **앱 실행**:
-    - Android Studio에서 프로젝트를 열고, Gradle 동기화가 완료되면 앱을 실행합니다.
-
----
-
-## 향후 개선 사항
-
-- 행운의 아이템
-=======
-## 설치 및 실행 방법 (Installation & How to Run)
+## 🚀 설치 및 실행 방법 (Installation & How to Run)
 
 1.  **저장소 복제**:
     ```bash
@@ -158,30 +129,19 @@
 ## 🔭 향후 개선 사항 (Future Improvements)
 
 - 별자리 공유 기능
->>>>>>> f5466f6e8be7269bb7092f881435bcd014f98bfb
 - 상세 정보 제공 (별자리 신화, 역사 등)
 - 다양한 앱 테마 지원 (다크 모드 등)
 - 홈 화면 위젯 지원
 
 ---
 
-<<<<<<< HEAD
-## 팀원
-=======
-## 제작자 (Authors)
->>>>>>> f5466f6e8be7269bb7092f881435bcd014f98bfb
+## 👤 제작자 (Authors)
 
 - 박은지 (@eunji)
 - 이동근 (@142spp)
 
 ---
 
-<<<<<<< HEAD
-## 라이선스 (License)
-
-This project is licensed under the MIT License.
-=======
 ## 📄 라이선스 (License)
 
 This project is licensed under the MIT License.
->>>>>>> f5466f6e8be7269bb7092f881435bcd014f98bfb
