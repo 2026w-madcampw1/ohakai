@@ -1,5 +1,6 @@
 package com.example.constellationapp.screens
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -42,7 +43,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -> Unit) {
+fun ImageScreen(
+    dataStoreManager: DataStoreManager, 
+    initialZodiac: String? = null,
+    initialContent: String? = null,
+    onNavigateToDrawing: (Int) -> Unit
+) {
     val allItems = LuckItemProvider.items
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -55,10 +61,15 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
     var selectedZodiac by remember { mutableStateOf<String?>(null) }
     var currentLuckyIndices by remember { mutableStateOf<List<Int>>(emptyList()) }
 
-    // 유저 정보다 로드되면 선택된 별자리를 초기화
-    LaunchedEffect(userStats) {
-        if (selectedZodiac == null && userStats != null) {
+    // Navigation parameter or User Profile as initial value
+    LaunchedEffect(initialZodiac, userStats) {
+        Log.d("ImageScreen", "LaunchedEffect: initialZodiac=$initialZodiac, current selectedZodiac=$selectedZodiac, userStatsZodiac=${userStats?.zodiac}")
+        if (initialZodiac != null) {
+            selectedZodiac = initialZodiac
+            Log.d("ImageScreen", "Set selectedZodiac to initialZodiac: $initialZodiac")
+        } else if (selectedZodiac == null && userStats != null) {
             selectedZodiac = userStats?.zodiac
+            Log.d("ImageScreen", "Set selectedZodiac to userProfile: ${userStats?.zodiac}")
         }
     }
 
@@ -122,12 +133,19 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
+                    val descriptionText = if (initialContent != null && selectedZodiac == initialZodiac) {
+                        initialContent
+                    } else {
+                        "오늘은 좋은 기운이 맴도는 날이에요\n아래의 아이템들이 당신의 하루를 더 빛내줄 거예요"
+                    }
+
                     Text(
-                        text = "오늘은 좋은 기운이 맴도는 날이에요\n아래의 아이템들이 당신의 하루를 더 빛내줄 거예요",
+                        text = descriptionText,
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         color = Color.Gray,
-                        lineHeight = 20.sp
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
             }
@@ -161,9 +179,9 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
 }
 
 private val zodiacList = listOf(
-    "양자리", "황소자리", "쌍둥이자리", "게자리", 
-    "사자자리", "처녀자리", "천칭자리", "전갈자리", 
-    "궁수자리", "염소자리", "물병자리", "물고기자리"
+    "양자리", "황소자리", "쌍둥이자리", "사자자리", 
+    "처녀자리", "천칭자리", "전갈자리", "사수자리", 
+    "염소자리", "물병자리", "물고기자리"
 )
 
 @Composable
