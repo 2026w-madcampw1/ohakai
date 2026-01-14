@@ -1,5 +1,6 @@
 package com.example.constellationapp.screens
 
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -43,7 +44,12 @@ import com.example.constellationapp.ConstellationData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImageScreen(dataStoreManager: DataStoreManager, horoscopes: List<ConstellationData>, onNavigateToDrawing: (Int) -> Unit) {
+fun ImageScreen(
+    dataStoreManager: DataStoreManager, 
+    horoscopes: List<ConstellationData>, 
+    onNavigateToDrawing: (Int) -> Unit,
+    initialZodiac : String? = null)
+{
     val allItems = LuckItemProvider.items
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -56,10 +62,15 @@ fun ImageScreen(dataStoreManager: DataStoreManager, horoscopes: List<Constellati
     var selectedZodiac by remember { mutableStateOf<String?>(null) }
     var currentLuckyIndices by remember { mutableStateOf<List<Int>>(emptyList()) }
 
-    // 유저 정보다 로드되면 선택된 별자리를 초기화
-    LaunchedEffect(userStats) {
-        if (selectedZodiac == null && userStats != null) {
+    // Navigation parameter or User Profile as initial value
+    LaunchedEffect(initialZodiac, userStats) {
+        Log.d("ImageScreen", "LaunchedEffect: initialZodiac=$initialZodiac, current selectedZodiac=$selectedZodiac, userStatsZodiac=${userStats?.zodiac}")
+        if (initialZodiac != null) {
+            selectedZodiac = initialZodiac
+            Log.d("ImageScreen", "Set selectedZodiac to initialZodiac: $initialZodiac")
+        } else if (selectedZodiac == null && userStats != null) {
             selectedZodiac = userStats?.zodiac
+            Log.d("ImageScreen", "Set selectedZodiac to userProfile: ${userStats?.zodiac}")
         }
     }
 
@@ -141,7 +152,8 @@ fun ImageScreen(dataStoreManager: DataStoreManager, horoscopes: List<Constellati
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         color = Color.Gray,
-                        lineHeight = 20.sp
+                        lineHeight = 20.sp,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
 
                 }
@@ -176,9 +188,9 @@ fun ImageScreen(dataStoreManager: DataStoreManager, horoscopes: List<Constellati
 }
 
 private val zodiacList = listOf(
-    "양자리", "황소자리", "쌍둥이자리", "게자리", 
-    "사자자리", "처녀자리", "천칭자리", "전갈자리", 
-    "궁수자리", "염소자리", "물병자리", "물고기자리"
+    "양자리", "황소자리", "쌍둥이자리", "사자자리", 
+    "처녀자리", "천칭자리", "전갈자리", "사수자리", 
+    "염소자리", "물병자리", "물고기자리"
 )
 
 @Composable

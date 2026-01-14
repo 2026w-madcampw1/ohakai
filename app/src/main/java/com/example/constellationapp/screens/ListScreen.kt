@@ -101,7 +101,7 @@ fun ListScreen(
                                 append(user.name)
                             }
                             withStyle(style = SpanStyle(color = Color(0xFF1A1C1E), fontWeight = FontWeight.Bold)) {
-                                append("님의 오늘 별자리 순위는 ")
+                                append("님의 오늘 별자리 순위는 \n")
                             }
                             withStyle(style = SpanStyle(color = Color(0xFF3B82F6), fontWeight = FontWeight.Bold)) {
                                 append("${userRank}위")

@@ -84,7 +84,10 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
     val todayIndices by dataStoreManager.todayLuckyIndices.collectAsState(initial = emptyList())
     val hiddenSlots by dataStoreManager.hiddenItemIndices.collectAsState(initial = emptySet())
     val bottomBarRoutes = AppDestinations.entries.map { it.route }
-    val showBottomBar = currentRoute in bottomBarRoutes || currentRoute?.startsWith("drawing/") == true
+    val showBottomBar = currentRoute != null && (
+        bottomBarRoutes.any { currentRoute.startsWith(it) } || 
+        currentRoute.startsWith("drawing/")
+    )
 
     Scaffold(
         bottomBar = {
@@ -97,7 +100,7 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         tonalElevation = 0.dp
                     ) {
                         AppDestinations.entries.forEach { destination ->
-                            val isSelected = currentRoute == destination.route || 
+                            val isSelected = currentRoute?.startsWith(destination.route) == true || 
                                             (destination == AppDestinations.Drawing && currentRoute?.startsWith("drawing/") == true)
                             
                             NavigationBarItem(
@@ -160,16 +163,39 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                 }
                 composable(AppDestinations.Horoscope.route) {
                     ListScreen(onItemClick = { name, content ->
+                        Log.d("MainActivity", "Item clicked! Navigating to luckyItem?zodiac=$name")
                         val encodedContent = URLEncoder.encode(content, StandardCharsets.UTF_8.toString())
-                        navController.navigate("constellationDetail/$name/$encodedContent")
+                        navController.navigate("${AppDestinations.LuckyItem.route}?zodiac=$name&content=$encodedContent") {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                        }
                     })
                 }
-                composable(AppDestinations.LuckyItem.route) {
+                composable(
+                    route = "${AppDestinations.LuckyItem.route}?zodiac={zodiac}&content={content}",
+                    arguments = listOf(
+                        navArgument("zodiac") { 
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                        navArgument("content") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
                     val horoscopes by horoscopeViewModel.horoscopes.collectAsState()
-
+                    val zodiac = backStackEntry.arguments?.getString("zodiac")
+                    // Note: content is also available if needed, but for now we focus on zodiac focus
+                    
                     ImageScreen(
                         dataStoreManager = dataStoreManager,
-                        horoscopes = horoscopes, // ✅ 추가
+                        horoscopes = horoscopes,
+                        initialZodiac = zodiac,
                         onNavigateToDrawing = { index ->
                             navController.navigate("drawing/$index") {
                                 launchSingleTop = true
@@ -178,7 +204,6 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         }
                     )
                 }
-                // 특정 아이템 번호를 받아서 들어가는 경우
                 composable(
                     route = "drawing/{itemIndex}",
                     arguments = listOf(navArgument("itemIndex") { type = NavType.IntType })
@@ -190,19 +215,17 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         onBackClick = { navController.popBackStack() }
                     )
                 }
-                // [수정] 탭 버튼 클릭해서 들어가는 경우: 미해금 아이템 중 랜덤 선택
                 composable(AppDestinations.Drawing.route) {
                     val randomStartIndex = remember(todayIndices, hiddenSlots) {
                         if (todayIndices.isNotEmpty()) {
-                            // 아직 해금 안 된 슬롯(hiddenSlots)에 해당하는 실제 아이템 번호들 필터링
                             val lockedItemIndices = if (hiddenSlots.isNotEmpty()) {
                                 hiddenSlots.mapNotNull { slotIdx -> todayIndices.getOrNull(slotIdx) }
                             } else {
-                                todayIndices // 다 해금했으면 전체 4개 중 랜덤
+                                todayIndices
                             }
                             lockedItemIndices.randomOrNull() ?: todayIndices.firstOrNull() ?: 0
                         } else {
-                            0 // 데이터 로딩 전 기본값
+                            0
                         }
                     }
                     DrawingScreen(
