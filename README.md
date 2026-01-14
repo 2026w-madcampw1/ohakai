@@ -6,9 +6,9 @@
 
 ## 📸 스크린샷 (Screenshots)
 
-| 운세 순위 | 오늘의 운세 | 별자리 그리기 |
-|:---:|:---:|:---:|
-| *(Screenshot Placeholder)* | *(Screenshot Placeholder)* | *(Screenshot Placeholder)* |
+|                 운세 순위                  |                 오늘의 운세                 |                별자리 그리기                 |
+|:--------------------------------------:|:--------------------------------------:|:--------------------------------------:|
+| ![](screenshots/Screenshot_tab1-1.jpg) | ![](screenshots/Screenshot_tab2-1.jpg) | ![](screenshots/Screenshot_tab3-3.jpg) |
 
 ## 📋 목차
 
