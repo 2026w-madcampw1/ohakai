@@ -47,7 +47,7 @@ class HoroscopeRepository {
                 if (horoscope.content.isNotBlank()) {
                     try {
                         val translatedContent = translateText(horoscope.content)
-                        val formattedContent = translatedContent.replace(". ", ".\n")
+                        val formattedContent = translatedContent.replace(Regex("([.!?])\\s+"), "$1\n")
                         horoscope.copy(content = formattedContent)
                     } catch (e: Exception) {
                         Log.e("HoroscopeRepository", "번역 오류: ${e.message}")

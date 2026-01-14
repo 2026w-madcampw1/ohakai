@@ -39,10 +39,11 @@ import com.example.constellationapp.LuckItemProvider
 import com.example.constellationapp.LuckyItemData
 import com.example.constellationapp.R
 import kotlinx.coroutines.launch
+import com.example.constellationapp.ConstellationData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -> Unit) {
+fun ImageScreen(dataStoreManager: DataStoreManager, horoscopes: List<ConstellationData>, onNavigateToDrawing: (Int) -> Unit) {
     val allItems = LuckItemProvider.items
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -121,14 +122,28 @@ fun ImageScreen(dataStoreManager: DataStoreManager, onNavigateToDrawing: (Int) -
                     Text(text = displayDate, fontSize = 14.sp, color = Color(0xFF6A8CFF), fontWeight = FontWeight.Medium)
                     
                     Spacer(modifier = Modifier.height(12.dp))
-                    
+
+                    val horoscopeText = remember(selectedZodiac, horoscopes) {
+                        val zodiac = selectedZodiac
+                        if (zodiac.isNullOrBlank()) {
+                            "오늘 운세를 불러오는 중이에요"
+                        } else {
+                            horoscopes
+                                .firstOrNull { it.name == zodiac }
+                                ?.content
+                                ?.replace(Regex("([.!?])\\s+"), "$1\n") // 문장별 줄바꿈
+                                ?: "오늘 운세를 불러오는 중이에요"
+                        }
+                    }
+
                     Text(
-                        text = "오늘은 좋은 기운이 맴도는 날이에요\n아래의 아이템들이 당신의 하루를 더 빛내줄 거예요",
+                        text = horoscopeText,
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         color = Color.Gray,
                         lineHeight = 20.sp
                     )
+
                 }
             }
 

@@ -36,6 +36,9 @@ import com.example.constellationapp.ui.theme.ConstellationAppTheme
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.constellationapp.viewmodels.HoroscopeViewModel
 
 enum class AppDestinations(
     val route: String,
@@ -70,6 +73,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ConstellationApp(dataStoreManager: DataStoreManager) {
     val navController = rememberNavController()
+    val horoscopeViewModel: HoroscopeViewModel = viewModel()
+
+    LaunchedEffect(Unit) {
+        horoscopeViewModel.fetchHoroscopes()
+    }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val isOnboardingCompleted by dataStoreManager.isOnboardingCompleted.collectAsState(initial = null)
@@ -156,13 +164,19 @@ fun ConstellationApp(dataStoreManager: DataStoreManager) {
                         navController.navigate("constellationDetail/$name/$encodedContent")
                     })
                 }
-                composable(AppDestinations.LuckyItem.route) { 
-                    ImageScreen(dataStoreManager = dataStoreManager, onNavigateToDrawing = { index ->
-                        navController.navigate("drawing/$index") {
-                            launchSingleTop = true
-                            restoreState = true
+                composable(AppDestinations.LuckyItem.route) {
+                    val horoscopes by horoscopeViewModel.horoscopes.collectAsState()
+
+                    ImageScreen(
+                        dataStoreManager = dataStoreManager,
+                        horoscopes = horoscopes, // ✅ 추가
+                        onNavigateToDrawing = { index ->
+                            navController.navigate("drawing/$index") {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
-                    }) 
+                    )
                 }
                 // 특정 아이템 번호를 받아서 들어가는 경우
                 composable(
